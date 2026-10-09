@@ -4,24 +4,39 @@
  "editable": true,
  "refresh": "5s",
  "time": {
-  "from": "now-15m",
+  "from": "now-30m",
   "to": "now"
  },
  "timezone": "browser",
  "schemaVersion": 39,
  "tags": [
-  "demo"
+  "dino"
  ],
+ "graphTooltip": 1,
  "panels": [
   {
    "id": 1,
-   "type": "stat",
-   "title": "Database reachable",
+   "type": "row",
+   "title": "Service",
    "gridPos": {
     "x": 0,
     "y": 0,
-    "w": 6,
-    "h": 5
+    "w": 24,
+    "h": 1
+   },
+   "collapsed": false,
+   "panels": []
+  },
+  {
+   "id": 2,
+   "type": "stat",
+   "title": "Database",
+   "description": "UP when the scores table answers a query from the app",
+   "gridPos": {
+    "x": 0,
+    "y": 1,
+    "w": 4,
+    "h": 4
    },
    "datasource": {
     "type": "prometheus",
@@ -30,75 +45,63 @@
    "targets": [
     {
      "expr": "dino_db_up",
-     "refId": "A"
+     "refId": "A",
+     "instant": true
     }
    ],
    "options": {
     "reduceOptions": {
      "calcs": [
       "lastNotNull"
-     ]
+     ],
+     "fields": ""
     },
     "colorMode": "background",
     "graphMode": "none",
-    "textMode": "value"
+    "textMode": "value",
+    "justifyMode": "center"
    },
    "fieldConfig": {
     "defaults": {
-     "unit": "none",
-     "color": {
-      "mode": "thresholds"
-     },
-     "thresholds": {
-      "mode": "absolute",
-      "steps": [
-       {
-        "color": "red",
-        "value": null
-       },
-       {
-        "color": "green",
-        "value": 1
+     "unit": "short",
+     "decimals": 0,
+     "mappings": [
+      {
+       "type": "range",
+       "options": {
+        "from": 0.5,
+        "to": 1.5,
+        "result": {
+         "text": "UP",
+         "color": "#16a34a",
+         "index": 0
+        }
        }
-      ]
-     }
-    },
-    "overrides": []
-   }
-  },
-  {
-   "id": 2,
-   "type": "stat",
-   "title": "Scores in database",
-   "gridPos": {
-    "x": 6,
-    "y": 0,
-    "w": 6,
-    "h": 5
-   },
-   "datasource": {
-    "type": "prometheus",
-    "uid": "prometheus"
-   },
-   "targets": [
-    {
-     "expr": "dino_scores_total",
-     "refId": "A"
-    }
-   ],
-   "options": {
-    "reduceOptions": {
-     "calcs": [
-      "lastNotNull"
-     ]
-    },
-    "colorMode": "background",
-    "graphMode": "none",
-    "textMode": "value"
-   },
-   "fieldConfig": {
-    "defaults": {
-     "unit": "none",
+      },
+      {
+       "type": "range",
+       "options": {
+        "from": -0.5,
+        "to": 0.5,
+        "result": {
+         "text": "DOWN",
+         "color": "#dc2626",
+         "index": 1
+        }
+       }
+      },
+      {
+       "type": "special",
+       "options": {
+        "match": "null",
+        "result": {
+         "text": "NO DATA",
+         "color": "#9ca3af",
+         "index": 2
+        }
+       }
+      }
+     ],
      "color": {
       "mode": "thresholds"
      },
@@ -106,7 +109,7 @@
       "mode": "absolute",
       "steps": [
        {
-        "color": "blue",
+        "color": "#3b82f6",
         "value": null
        }
       ]
@@ -118,12 +121,13 @@
   {
    "id": 3,
    "type": "stat",
-   "title": "Top score",
+   "title": "Game backend",
+   "description": "HAProxy health check on /healthz",
    "gridPos": {
-    "x": 12,
-    "y": 0,
-    "w": 6,
-    "h": 5
+    "x": 4,
+    "y": 1,
+    "w": 4,
+    "h": 4
    },
    "datasource": {
     "type": "prometheus",
@@ -131,23 +135,64 @@
    },
    "targets": [
     {
-     "expr": "dino_top_score",
-     "refId": "A"
+     "expr": "max(haproxy_server_status{proxy=\"game\", state=\"UP\"})",
+     "refId": "A",
+     "instant": true
     }
    ],
    "options": {
     "reduceOptions": {
      "calcs": [
       "lastNotNull"
-     ]
+     ],
+     "fields": ""
     },
     "colorMode": "background",
     "graphMode": "none",
-    "textMode": "value"
+    "textMode": "value",
+    "justifyMode": "center"
    },
    "fieldConfig": {
     "defaults": {
-     "unit": "none",
+     "unit": "short",
+     "decimals": 0,
+     "mappings": [
+      {
+       "type": "range",
+       "options": {
+        "from": 0.5,
+        "to": 1.5,
+        "result": {
+         "text": "UP",
+         "color": "#16a34a",
+         "index": 0
+        }
+       }
+      },
+      {
+       "type": "range",
+       "options": {
+        "from": -0.5,
+        "to": 0.5,
+        "result": {
+         "text": "DOWN",
+         "color": "#dc2626",
+         "index": 1
+        }
+       }
+      },
+      {
+       "type": "special",
+       "options": {
+        "match": "null",
+        "result": {
+         "text": "NO DATA",
+         "color": "#9ca3af",
+         "index": 2
+        }
+       }
+      }
+     ],
      "color": {
       "mode": "thresholds"
      },
@@ -155,7 +200,7 @@
       "mode": "absolute",
       "steps": [
        {
-        "color": "purple",
+        "color": "#3b82f6",
         "value": null
        }
       ]
@@ -167,12 +212,13 @@
   {
    "id": 4,
    "type": "stat",
-   "title": "Backups on disk",
+   "title": "Scores in database",
+   "description": "",
    "gridPos": {
-    "x": 18,
-    "y": 0,
-    "w": 6,
-    "h": 5
+    "x": 8,
+    "y": 1,
+    "w": 4,
+    "h": 4
    },
    "datasource": {
     "type": "prometheus",
@@ -180,31 +226,37 @@
    },
    "targets": [
     {
-     "expr": "dino_backups_total",
-     "refId": "A"
+     "expr": "dino_scores_total",
+     "refId": "A",
+     "instant": true
     }
    ],
    "options": {
     "reduceOptions": {
      "calcs": [
       "lastNotNull"
-     ]
+     ],
+     "fields": ""
     },
-    "colorMode": "background",
+    "colorMode": "value",
     "graphMode": "none",
-    "textMode": "value"
+    "textMode": "value",
+    "justifyMode": "center"
    },
    "fieldConfig": {
     "defaults": {
-     "unit": "none",
+     "unit": "short",
+     "decimals": 0,
+     "mappings": [],
      "color": {
-      "mode": "thresholds"
+      "mode": "fixed",
+      "fixedColor": "#3b82f6"
      },
      "thresholds": {
       "mode": "absolute",
       "steps": [
        {
-        "color": "orange",
+        "color": "#3b82f6",
         "value": null
        }
       ]
@@ -215,13 +267,291 @@
   },
   {
    "id": 5,
-   "type": "timeseries",
-   "title": "Scores in database over time",
+   "type": "stat",
+   "title": "Top score",
+   "description": "",
+   "gridPos": {
+    "x": 12,
+    "y": 1,
+    "w": 4,
+    "h": 4
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "dino_top_score",
+     "refId": "A",
+     "instant": true
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": ""
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "decimals": 0,
+     "mappings": [],
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#7c3aed"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#7c3aed",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 6,
+   "type": "stat",
+   "title": "Backups on disk",
+   "description": "Dumps kept by the minute timer",
+   "gridPos": {
+    "x": 16,
+    "y": 1,
+    "w": 4,
+    "h": 4
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "dino_backups_total",
+     "refId": "A",
+     "instant": true
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": ""
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "decimals": 0,
+     "mappings": [],
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#ea580c"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#ea580c",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 7,
+   "type": "stat",
+   "title": "Games per minute",
+   "description": "",
+   "gridPos": {
+    "x": 20,
+    "y": 1,
+    "w": 4,
+    "h": 4
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "sum(rate(dino_submissions_total[2m])) * 60",
+     "refId": "A",
+     "instant": true
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": ""
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "decimals": 1,
+     "mappings": [],
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#3b82f6"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3b82f6",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 8,
+   "type": "row",
+   "title": "Database",
    "gridPos": {
     "x": 0,
     "y": 5,
     "w": 24,
-    "h": 9
+    "h": 1
+   },
+   "collapsed": false,
+   "panels": []
+  },
+  {
+   "id": 9,
+   "type": "state-timeline",
+   "title": "Database reachable",
+   "description": "The demo: drop the database, watch it go red, restore it with Ansible",
+   "gridPos": {
+    "x": 0,
+    "y": 6,
+    "w": 24,
+    "h": 4
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "dino_db_up",
+     "refId": "A",
+     "legendFormat": "database"
+    }
+   ],
+   "options": {
+    "showValue": "auto",
+    "rowHeight": 0.8,
+    "mergeValues": true,
+    "legend": {
+     "showLegend": false
+    },
+    "tooltip": {
+     "mode": "single"
+    }
+   },
+   "fieldConfig": {
+    "defaults": {
+     "color": {
+      "mode": "thresholds"
+     },
+     "custom": {
+      "fillOpacity": 85,
+      "lineWidth": 0
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#9ca3af",
+        "value": null
+       }
+      ]
+     },
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "1": {
+         "text": "UP",
+         "color": "#16a34a",
+         "index": 0
+        },
+        "0": {
+         "text": "DOWN",
+         "color": "#dc2626",
+         "index": 1
+        }
+       }
+      },
+      {
+       "type": "special",
+       "options": {
+        "match": "null",
+        "result": {
+         "text": "NO DATA",
+         "color": "#9ca3af",
+         "index": 2
+        }
+       }
+      }
+     ]
+    },
+    "overrides": []
+   },
+   "transformations": [
+    {
+     "id": "convertFieldType",
+     "options": {
+      "conversions": [
+       {
+        "targetField": "database",
+        "destinationType": "string"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": 10,
+   "type": "timeseries",
+   "title": "Scores in database",
+   "description": "Drops to 0 when the database is gone, jumps back after restore",
+   "gridPos": {
+    "x": 0,
+    "y": 10,
+    "w": 12,
+    "h": 7
    },
    "datasource": {
     "type": "prometheus",
@@ -230,78 +560,81 @@
    "targets": [
     {
      "expr": "dino_scores_total",
-     "refId": "A",
-     "legendFormat": "rows"
+     "legendFormat": "rows",
+     "refId": "A"
     }
    ],
-   "fieldConfig": {
-    "defaults": {
-     "custom": {
-      "lineWidth": 2,
-      "fillOpacity": 15
-     },
-     "color": {
-      "mode": "palette-classic"
-     }
-    },
-    "overrides": []
-   },
    "options": {
     "legend": {
      "displayMode": "list",
-     "placement": "bottom"
+     "placement": "bottom",
+     "showLegend": false
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
     }
-   }
-  },
-  {
-   "id": 6,
-   "type": "timeseries",
-   "title": "Games submitted per minute",
-   "gridPos": {
-    "x": 0,
-    "y": 14,
-    "w": 12,
-    "h": 9
    },
-   "datasource": {
-    "type": "prometheus",
-    "uid": "prometheus"
-   },
-   "targets": [
-    {
-     "expr": "rate(dino_submissions_total[1m])*60",
-     "refId": "A",
-     "legendFormat": "submissions/min"
-    }
-   ],
    "fieldConfig": {
     "defaults": {
-     "custom": {
-      "lineWidth": 2,
-      "fillOpacity": 15
-     },
+     "unit": "short",
      "color": {
       "mode": "palette-classic"
+     },
+     "min": 0,
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 10,
+      "pointSize": 4,
+      "showPoints": "never",
+      "spanNulls": true,
+      "stacking": {
+       "mode": "none"
+      },
+      "gradientMode": "none",
+      "thresholdsStyle": {
+       "mode": "off"
+      }
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "transparent",
+        "value": null
+       }
+      ]
      }
     },
-    "overrides": []
-   },
-   "options": {
-    "legend": {
-     "displayMode": "list",
-     "placement": "bottom"
-    }
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "rows"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3b82f6"
+        }
+       }
+      ]
+     }
+    ]
    }
   },
   {
-   "id": 7,
+   "id": 11,
    "type": "timeseries",
-   "title": "Memory used (MB)",
+   "title": "Backups on disk",
+   "description": "",
    "gridPos": {
     "x": 12,
-    "y": 14,
+    "y": 10,
     "w": 12,
-    "h": 9
+    "h": 7
    },
    "datasource": {
     "type": "prometheus",
@@ -309,29 +642,993 @@
    },
    "targets": [
     {
-     "expr": "(node_memory_MemTotal_bytes-node_memory_MemAvailable_bytes)/1024/1024",
-     "refId": "A",
-     "legendFormat": "used MB"
+     "expr": "dino_backups_total",
+     "legendFormat": "dumps",
+     "refId": "A"
     }
    ],
-   "fieldConfig": {
-    "defaults": {
-     "custom": {
-      "lineWidth": 2,
-      "fillOpacity": 15
-     },
-     "color": {
-      "mode": "palette-classic"
-     }
-    },
-    "overrides": []
-   },
    "options": {
     "legend": {
      "displayMode": "list",
-     "placement": "bottom"
+     "placement": "bottom",
+     "showLegend": false
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
     }
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "color": {
+      "mode": "palette-classic"
+     },
+     "min": 0,
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 10,
+      "pointSize": 4,
+      "showPoints": "never",
+      "spanNulls": true,
+      "stacking": {
+       "mode": "none"
+      },
+      "gradientMode": "none",
+      "thresholdsStyle": {
+       "mode": "off"
+      }
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "transparent",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "dumps"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#ea580c"
+        }
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": 12,
+   "type": "row",
+   "title": "Traffic (HAProxy)",
+   "gridPos": {
+    "x": 0,
+    "y": 17,
+    "w": 24,
+    "h": 1
+   },
+   "collapsed": false,
+   "panels": []
+  },
+  {
+   "id": 13,
+   "type": "stat",
+   "title": "Cache hit ratio",
+   "description": "Game files and leaderboard polls answered by HAProxy without touching the app",
+   "gridPos": {
+    "x": 0,
+    "y": 18,
+    "w": 4,
+    "h": 7
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "sum(rate(haproxy_frontend_http_cache_hits_total{proxy=\"http_in\"}[5m])) / sum(rate(haproxy_frontend_http_cache_lookups_total{proxy=\"http_in\"}[5m]))",
+     "refId": "A",
+     "instant": true
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": ""
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percentunit",
+     "decimals": 0,
+     "mappings": [],
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#0d9488"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#0d9488",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 14,
+   "type": "timeseries",
+   "title": "Requests per second by backend",
+   "description": "",
+   "gridPos": {
+    "x": 4,
+    "y": 18,
+    "w": 7,
+    "h": 7
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "sum by (proxy) (rate(haproxy_backend_http_requests_total[1m]))",
+     "legendFormat": "{{proxy}}",
+     "refId": "A"
+    }
+   ],
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom",
+     "showLegend": false
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "reqps",
+     "color": {
+      "mode": "palette-classic"
+     },
+     "min": 0,
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "pointSize": 4,
+      "showPoints": "never",
+      "spanNulls": true,
+      "stacking": {
+       "mode": "none"
+      },
+      "gradientMode": "none",
+      "thresholdsStyle": {
+       "mode": "off"
+      }
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "transparent",
+        "value": null
+       }
+      ]
+     },
+     "decimals": 1
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 15,
+   "type": "timeseries",
+   "title": "Responses per second by class",
+   "description": "5xx while the database is gone is expected: the API answers 503, the page itself stays up",
+   "gridPos": {
+    "x": 11,
+    "y": 18,
+    "w": 7,
+    "h": 7
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "sum by (code) (rate(haproxy_frontend_http_responses_total{proxy=\"http_in\"}[1m]))",
+     "legendFormat": "{{code}}",
+     "refId": "A"
+    }
+   ],
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom",
+     "showLegend": false
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "reqps",
+     "color": {
+      "mode": "palette-classic"
+     },
+     "min": 0,
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 40,
+      "pointSize": 4,
+      "showPoints": "never",
+      "spanNulls": true,
+      "stacking": {
+       "mode": "normal"
+      },
+      "gradientMode": "none",
+      "thresholdsStyle": {
+       "mode": "off"
+      }
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "transparent",
+        "value": null
+       }
+      ]
+     },
+     "decimals": 1
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 16,
+   "type": "timeseries",
+   "title": "Active sessions",
+   "description": "",
+   "gridPos": {
+    "x": 18,
+    "y": 18,
+    "w": 6,
+    "h": 7
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "sum by (proxy) (haproxy_backend_current_sessions)",
+     "legendFormat": "{{proxy}}",
+     "refId": "A"
+    }
+   ],
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom",
+     "showLegend": false
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "color": {
+      "mode": "palette-classic"
+     },
+     "min": 0,
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "pointSize": 4,
+      "showPoints": "never",
+      "spanNulls": true,
+      "stacking": {
+       "mode": "none"
+      },
+      "gradientMode": "none",
+      "thresholdsStyle": {
+       "mode": "off"
+      }
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "transparent",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 17,
+   "type": "row",
+   "title": "Host (the VM)",
+   "gridPos": {
+    "x": 0,
+    "y": 25,
+    "w": 24,
+    "h": 1
+   },
+   "collapsed": false,
+   "panels": []
+  },
+  {
+   "id": 18,
+   "type": "stat",
+   "title": "Uptime",
+   "description": "",
+   "gridPos": {
+    "x": 0,
+    "y": 26,
+    "w": 4,
+    "h": 4
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "node_time_seconds - node_boot_time_seconds",
+     "refId": "A",
+     "instant": true
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": ""
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "dtdurations",
+     "decimals": 0,
+     "mappings": [],
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#9ca3af"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#9ca3af",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 19,
+   "type": "stat",
+   "title": "CPUs",
+   "description": "",
+   "gridPos": {
+    "x": 4,
+    "y": 26,
+    "w": 4,
+    "h": 4
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "count(node_cpu_seconds_total{mode=\"idle\"})",
+     "refId": "A",
+     "instant": true
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": ""
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "decimals": 0,
+     "mappings": [],
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#9ca3af"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#9ca3af",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 20,
+   "type": "stat",
+   "title": "Load per core (1 min)",
+   "description": "Above 1 means work is queueing for the CPU",
+   "gridPos": {
+    "x": 8,
+    "y": 26,
+    "w": 4,
+    "h": 4
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "node_load1 / count(node_cpu_seconds_total{mode=\"idle\"})",
+     "refId": "A",
+     "instant": true
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": ""
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "decimals": 2,
+     "mappings": [],
+     "color": {
+      "mode": "thresholds"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3b82f6",
+        "value": null
+       },
+       {
+        "color": "#ea580c",
+        "value": 0.7
+       },
+       {
+        "color": "#dc2626",
+        "value": 1
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 21,
+   "type": "stat",
+   "title": "Memory total",
+   "description": "",
+   "gridPos": {
+    "x": 12,
+    "y": 26,
+    "w": 4,
+    "h": 4
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "node_memory_MemTotal_bytes",
+     "refId": "A",
+     "instant": true
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": ""
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "bytes",
+     "decimals": 0,
+     "mappings": [],
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#9ca3af"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#9ca3af",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 22,
+   "type": "stat",
+   "title": "Disk used /",
+   "description": "",
+   "gridPos": {
+    "x": 16,
+    "y": 26,
+    "w": 4,
+    "h": 4
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "100 * (1 - node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"})",
+     "refId": "A",
+     "instant": true
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": ""
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "decimals": 0,
+     "mappings": [],
+     "color": {
+      "mode": "thresholds"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3b82f6",
+        "value": null
+       },
+       {
+        "color": "#ea580c",
+        "value": 75
+       },
+       {
+        "color": "#dc2626",
+        "value": 90
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 23,
+   "type": "stat",
+   "title": "Swap used",
+   "description": "",
+   "gridPos": {
+    "x": 20,
+    "y": 26,
+    "w": 4,
+    "h": 4
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "node_memory_SwapTotal_bytes - node_memory_SwapFree_bytes",
+     "refId": "A",
+     "instant": true
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": ""
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "bytes",
+     "decimals": 0,
+     "mappings": [],
+     "color": {
+      "mode": "thresholds"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#3b82f6",
+        "value": null
+       },
+       {
+        "color": "#ea580c",
+        "value": 300000000.0
+       },
+       {
+        "color": "#dc2626",
+        "value": 700000000.0
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 24,
+   "type": "timeseries",
+   "title": "CPU busy",
+   "description": "",
+   "gridPos": {
+    "x": 0,
+    "y": 30,
+    "w": 8,
+    "h": 7
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "100 * (1 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[1m])))",
+     "legendFormat": "cpu",
+     "refId": "A"
+    }
+   ],
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom",
+     "showLegend": false
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "color": {
+      "mode": "palette-classic"
+     },
+     "min": 0,
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 10,
+      "pointSize": 4,
+      "showPoints": "never",
+      "spanNulls": true,
+      "stacking": {
+       "mode": "none"
+      },
+      "gradientMode": "none",
+      "thresholdsStyle": {
+       "mode": "line"
+      }
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "transparent",
+        "value": null
+       },
+       {
+        "color": "#dc2626",
+        "value": 85
+       }
+      ]
+     },
+     "max": 100
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "cpu"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3b82f6"
+        }
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": 25,
+   "type": "timeseries",
+   "title": "Memory used",
+   "description": "",
+   "gridPos": {
+    "x": 8,
+    "y": 30,
+    "w": 8,
+    "h": 7
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)",
+     "legendFormat": "memory",
+     "refId": "A"
+    }
+   ],
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom",
+     "showLegend": false
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "color": {
+      "mode": "palette-classic"
+     },
+     "min": 0,
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 10,
+      "pointSize": 4,
+      "showPoints": "never",
+      "spanNulls": true,
+      "stacking": {
+       "mode": "none"
+      },
+      "gradientMode": "none",
+      "thresholdsStyle": {
+       "mode": "line"
+      }
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "transparent",
+        "value": null
+       },
+       {
+        "color": "#dc2626",
+        "value": 85
+       }
+      ]
+     },
+     "max": 100
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "memory"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3b82f6"
+        }
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": 26,
+   "type": "timeseries",
+   "title": "Network",
+   "description": "",
+   "gridPos": {
+    "x": 16,
+    "y": 30,
+    "w": 8,
+    "h": 7
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "sum(rate(node_network_receive_bytes_total{device!~\"lo|docker.*|veth.*\"}[1m]))",
+     "legendFormat": "in",
+     "refId": "A"
+    },
+    {
+     "expr": "sum(rate(node_network_transmit_bytes_total{device!~\"lo|docker.*|veth.*\"}[1m]))",
+     "legendFormat": "out",
+     "refId": "B"
+    }
+   ],
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom",
+     "showLegend": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "Bps",
+     "color": {
+      "mode": "palette-classic"
+     },
+     "min": 0,
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "pointSize": 4,
+      "showPoints": "never",
+      "spanNulls": true,
+      "stacking": {
+       "mode": "none"
+      },
+      "gradientMode": "none",
+      "thresholdsStyle": {
+       "mode": "off"
+      }
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "transparent",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "in"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#3b82f6"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "out"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#ea580c"
+        }
+       }
+      ]
+     }
+    ]
    }
   }
- ]
+ ],
+ "description": "Chrome dino with a shared leaderboard: database, minute backups, HAProxy, host."
 }

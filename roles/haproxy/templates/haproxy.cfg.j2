@@ -24,18 +24,26 @@ frontend http_in
     bind *:{{ haproxy_port }}
     acl host_graf  hdr_dom(host) -i {{ grafana_host }}
     acl host_prom  hdr_dom(host) -i {{ prometheus_host }}
+
+    http-request cache-use static if { path_beg /static/ } || { path /api/scores } { method GET }
+    http-response cache-store static
+
 {% if monitoring_enabled %}
     use_backend grafana    if host_graf
     use_backend prometheus if host_prom
 {% endif %}
     default_backend game
 
-    http-request cache-use static if { path_beg /static/ } || { path /api/scores } { method GET }
-    http-response cache-store static
-
     stats enable
     stats uri /haproxy
     stats refresh 5s
+
+{% if monitoring_enabled %}
+frontend metrics
+    bind 127.0.0.1:8405
+    http-request use-service prometheus-exporter if { path /metrics }
+    no log
+{% endif %}
 
 backend game
     option httpchk GET /healthz

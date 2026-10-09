@@ -19,7 +19,7 @@ HAProxy in front, Prometheus and Grafana watching.
 | `haproxy`    | Host-based routing, caches the game files and the leaderboard JSON               |
 | `dino`       | The game (Chromium's T-Rex runner) + a small Flask API, run by gunicorn          |
 | `prometheus` | Scrapes the game, node exporter and itself                                       |
-| `grafana`    | Anonymous viewer access, provisioned dashboard: DB reachable, rows, top score    |
+| `grafana`    | Anonymous viewer, provisioned dashboard: service status, database, HAProxy traffic, host |
 
 Pages: `/` the game (asks for a name, auto-starts, touch buttons for jump and duck),
 `/board` a big-font leaderboard for the projector, `/metrics` for Prometheus.
