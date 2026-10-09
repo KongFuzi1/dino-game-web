@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="et">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
@@ -42,17 +42,17 @@
     <div id="main-content"><div class="icon icon-offline"></div></div>
   </div>
 </div>
-<div class="pad" id="pad"><button type="button" id="btnJump">HÜPPA</button><button type="button" id="btnDuck">KÜKI</button></div>
-<div class="hint" id="hint">Puuduta mängu või vajuta tühikut = hüppa. Alla-nool või libista alla = kükita.</div>
+<div class="pad" id="pad"><button type="button" id="btnJump">JUMP</button><button type="button" id="btnDuck">DUCK</button></div>
+<div class="hint" id="hint">Tap the game or press space to jump. Down arrow or swipe down to duck.</div>
 <div class="status" id="status"></div>
-<table><thead><tr><th>#</th><th>Nimi</th><th>Skoor</th></tr></thead><tbody id="board"></tbody></table>
+<table><thead><tr><th>#</th><th>Name</th><th>Score</th></tr></thead><tbody id="board"></tbody></table>
 <footer>T-Rex runner: © The Chromium Authors, BSD license</footer>
 
 <div class="ov" id="nameov">
   <form class="card" id="nameform" autocomplete="off">
     <h2>DINO</h2>
-    <input id="name" maxlength="16" placeholder="Sinu nimi" required>
-    <button type="submit">Mängi</button>
+    <input id="name" maxlength="16" placeholder="Your name" required>
+    <button type="submit">Play</button>
   </form>
 </div>
 
@@ -138,11 +138,11 @@
     origGameOver.apply(this, arguments);
     const score = Math.round(this.distanceRan * this.distanceMeter.config.COEFFICIENT);
     lastScore = score;
-    hint.textContent = `Skoor ${score}. Puuduta mängu, et uuesti mängida.`;
+    hint.textContent = `Score ${score}. Tap the game to play again.`;
     fetch('/api/scores', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: playerName, score }) })
       .then(r => r.json())
-      .then(j => setStatus(j.ok ? `${playerName}: ${score} punkti, koht #${j.rank}` : 'Andmebaas ei vasta: ' + j.error, j.ok))
-      .catch(() => setStatus('Server ei vasta', false))
+      .then(j => setStatus(j.ok ? `${playerName}: ${score} points, rank #${j.rank}` : 'Database not responding: ' + j.error, j.ok))
+      .catch(() => setStatus('Server not responding', false))
       .then(loadBoard);
   };
   const origRestart = Runner.prototype.restart;
@@ -153,10 +153,10 @@
   async function loadBoard() {
     try {
       const r = await fetch('/api/scores'), j = await r.json();
-      if (!j.ok) { setStatus('Andmebaas ei vasta: ' + j.error, false); board.innerHTML = ''; return; }
-      if (statusEl.className.includes('bad')) setStatus(`Andmebaas on tagasi. ${j.total} skoori.`, true);
+      if (!j.ok) { setStatus('Database not responding: ' + j.error, false); board.innerHTML = ''; return; }
+      if (statusEl.className.includes('bad')) setStatus(`Database is back. ${j.total} scores.`, true);
       board.innerHTML = j.scores.map((s, i) => `<tr${s.name === playerName && s.score === lastScore ? ' class="you"' : ''}><td>${i + 1}</td><td>${esc(s.name)}</td><td>${s.score}</td></tr>`).join('');
-    } catch (err) { setStatus('Server ei vasta', false); }
+    } catch (err) { setStatus('Server not responding', false); }
   }
   loadBoard(); setInterval(loadBoard, 5000);
 })();

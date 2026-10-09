@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="et">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Edetabel</title>
+<title>Leaderboard</title>
 <style>
   body { margin:0; min-height:100vh; background:#4ec0ca; color:#543847; font-family: system-ui, sans-serif; display:flex; flex-direction:column; align-items:center; padding:24px 16px; box-sizing:border-box; }
   h1 { font-size:2.2rem; margin:0 0 4px; letter-spacing:.05em; }
@@ -23,7 +23,7 @@
 <div class="sub" id="sub">&nbsp;</div>
 <div class="status" id="status"></div>
 <table><tbody id="board"></tbody></table>
-<a href="/">mängi: dino.129-151-208-139.nip.io:8080</a>
+<a href="/">play: dino.129-151-208-139.nip.io:8080</a>
 <script>
   const board = document.getElementById('board'), statusEl = document.getElementById('status'), sub = document.getElementById('sub');
   const esc = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -31,11 +31,11 @@
   async function load() {
     try {
       const r = await fetch('/api/scores'), j = await r.json();
-      if (!j.ok) { statusEl.textContent = 'Andmebaas ei vasta: ' + j.error; statusEl.className = 'status bad'; board.innerHTML = ''; sub.innerHTML = '&nbsp;'; wasBad = true; return; }
-      if (wasBad) { statusEl.textContent = `Andmebaas on tagasi: ${j.total} skoori`; statusEl.className = 'status ok'; wasBad = false; }
-      sub.textContent = `${j.total} mängu andmebaasis`;
+      if (!j.ok) { statusEl.textContent = 'Database not responding: ' + j.error; statusEl.className = 'status bad'; board.innerHTML = ''; sub.innerHTML = '&nbsp;'; wasBad = true; return; }
+      if (wasBad) { statusEl.textContent = `Database is back: ${j.total} scores`; statusEl.className = 'status ok'; wasBad = false; }
+      sub.textContent = `${j.total} games in the database`;
       board.innerHTML = j.scores.map((s, i) => `<tr><td>${i + 1}.</td><td>${esc(s.name)}</td><td>${s.played_at}</td><td>${s.score}</td></tr>`).join('');
-    } catch (e) { statusEl.textContent = 'Server ei vasta'; statusEl.className = 'status bad'; wasBad = true; }
+    } catch (e) { statusEl.textContent = 'Server not responding'; statusEl.className = 'status bad'; wasBad = true; }
   }
   load(); setInterval(load, 3000);
 </script>

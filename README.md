@@ -31,7 +31,7 @@ ansible-playbook restore.yaml -e dump=/var/backups/dino/dino-20261209T140000.sql
 
 1. Open `http://dino.<domain>/` on the big screen, QR code for the audience. People play.
 2. `http://grafana.<domain>/` shows rows in the DB climbing, backups ticking up every minute.
-3. On the DB host: `sudo mysql -e 'DROP DATABASE dino'`. Scoreboard shows "Andmebaas ei vasta",
+3. On the DB host: `sudo mysql -e 'DROP DATABASE dino'`. Scoreboard shows "Database not responding",
    Grafana's "Database reachable" goes red, HAProxy keeps the page itself up.
 4. `ansible-playbook restore.yaml`. Scores are back, at most one minute lost (RPO 1 min).
 
