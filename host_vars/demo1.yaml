@@ -1,0 +1,2 @@
+# Port 80/443 on this box belong to an existing nginx site that must stay untouched.
+haproxy_port: 8080

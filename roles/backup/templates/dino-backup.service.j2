@@ -1,0 +1,7 @@
+[Unit]
+Description=Dump the {{ mysql_db }} database
+After=mysql.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/dino-backup

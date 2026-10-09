@@ -1,0 +1,44 @@
+---
+# Restore the dino database from the newest backup on the DB host.
+# Usage: ansible-playbook restore.yaml            (newest dump)
+#        ansible-playbook restore.yaml -e dump=/var/backups/dino/dino-20261209T140000.sql
+- name: Restore dino database from backup
+  hosts: db_servers
+  tasks:
+    - name: Find newest dump
+      ansible.builtin.shell: ls -1t {{ backup_dir }}/dino-*.sql | head -1
+      register: newest
+      changed_when: false
+      when: dump is not defined
+
+    - name: Pick dump
+      ansible.builtin.set_fact:
+        dump_file: "{{ dump | default(newest.stdout) }}"
+
+    - name: Show which dump is used
+      ansible.builtin.debug:
+        msg: "Restoring {{ dump_file }}"
+
+    - name: Make sure the database exists
+      community.mysql.mysql_db:
+        name: "{{ mysql_db }}"
+        state: present
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+
+    - name: Import the dump
+      community.mysql.mysql_db:
+        name: "{{ mysql_db }}"
+        state: import
+        target: "{{ dump_file }}"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+
+    - name: Count restored scores
+      community.mysql.mysql_query:
+        login_db: "{{ mysql_db }}"
+        query: SELECT COUNT(*) AS n FROM scores
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+      register: count
+
+    - name: Result
+      ansible.builtin.debug:
+        msg: "Scores back in the database: {{ count.query_result[0][0].n }}"

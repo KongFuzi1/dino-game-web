@@ -1,0 +1,16 @@
+# Public hostname base: *.nip.io resolves to the IP encoded in the name, no DNS setup needed.
+demo_domain: "129-151-208-139.nip.io"
+game_host: "dino.{{ demo_domain }}"
+grafana_host: "grafana.{{ demo_domain }}"
+prometheus_host: "prometheus.{{ demo_domain }}"
+
+# HAProxy front port. 80 by default; demo1 already has nginx on 80, so host_vars overrides it.
+haproxy_port: 80
+
+mysql_db: dino
+mysql_user: dino
+mysql_password: "{{ lookup('env', 'TETRIS_DB_PASSWORD') | default('dino-demo-2026', true) }}"
+
+backup_dir: /var/backups/dino
+backup_keep: 120          # dumps to keep (minutes of history at 1/min)
+backup_interval: "*:*:00" # systemd OnCalendar: every minute

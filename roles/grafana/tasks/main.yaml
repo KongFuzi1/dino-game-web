@@ -1,0 +1,60 @@
+- name: Grafana apt key
+  ansible.builtin.get_url:
+    url: https://apt.grafana.com/gpg.key
+    dest: /etc/apt/keyrings/grafana.asc
+    mode: "0644"
+
+- name: Grafana apt repo
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/grafana.asc] https://apt.grafana.com stable main"
+    filename: grafana
+    state: present
+
+- name: Install Grafana
+  ansible.builtin.apt:
+    name: grafana
+    state: present
+    update_cache: true
+
+- name: Grafana config
+  ansible.builtin.template:
+    src: grafana.ini.j2
+    dest: /etc/grafana/grafana.ini
+    owner: root
+    group: grafana
+    mode: "0640"
+  notify: restart grafana
+
+- name: Provisioning files
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: grafana
+    mode: "0640"
+  loop:
+    - { src: datasource.yaml.j2, dest: /etc/grafana/provisioning/datasources/prometheus.yaml }
+    - { src: dashboards.yaml.j2, dest: /etc/grafana/provisioning/dashboards/demo.yaml }
+  notify: restart grafana
+
+- name: Dashboard directory
+  ansible.builtin.file:
+    path: /var/lib/grafana/dashboards
+    state: directory
+    owner: grafana
+    group: grafana
+    mode: "0755"
+
+- name: Dino dashboard
+  ansible.builtin.copy:
+    src: dino.json
+    dest: /var/lib/grafana/dashboards/dino.json
+    owner: grafana
+    group: grafana
+    mode: "0644"
+
+- name: Start Grafana
+  ansible.builtin.service:
+    name: grafana-server
+    state: started
+    enabled: true

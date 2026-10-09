@@ -1,0 +1,16 @@
+# {{ ansible_managed }}
+[Unit]
+Description=Dino runner scoreboard
+After=network.target mysql.service
+
+[Service]
+User=dino
+Group=dino
+EnvironmentFile=/etc/default/dino
+WorkingDirectory=/opt/dino
+ExecStart=/usr/bin/gunicorn --bind 127.0.0.1:5000 --workers 1 --access-logfile - app:app
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

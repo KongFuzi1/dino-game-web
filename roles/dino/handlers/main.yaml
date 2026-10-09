@@ -1,0 +1,7 @@
+- name: reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+- name: restart dino
+  ansible.builtin.systemd:
+    name: dino
+    state: restarted

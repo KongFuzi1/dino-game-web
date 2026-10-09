@@ -1,0 +1,337 @@
+{
+ "title": "Dino demo",
+ "uid": "dino",
+ "editable": true,
+ "refresh": "5s",
+ "time": {
+  "from": "now-15m",
+  "to": "now"
+ },
+ "timezone": "browser",
+ "schemaVersion": 39,
+ "tags": [
+  "demo"
+ ],
+ "panels": [
+  {
+   "id": 1,
+   "type": "stat",
+   "title": "Database reachable",
+   "gridPos": {
+    "x": 0,
+    "y": 0,
+    "w": 6,
+    "h": 5
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "dino_db_up",
+     "refId": "A"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "colorMode": "background",
+    "graphMode": "none",
+    "textMode": "value"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "color": {
+      "mode": "thresholds"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 1
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 2,
+   "type": "stat",
+   "title": "Scores in database",
+   "gridPos": {
+    "x": 6,
+    "y": 0,
+    "w": 6,
+    "h": 5
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "dino_scores_total",
+     "refId": "A"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "colorMode": "background",
+    "graphMode": "none",
+    "textMode": "value"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "color": {
+      "mode": "thresholds"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "blue",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 3,
+   "type": "stat",
+   "title": "Top score",
+   "gridPos": {
+    "x": 12,
+    "y": 0,
+    "w": 6,
+    "h": 5
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "dino_top_score",
+     "refId": "A"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "colorMode": "background",
+    "graphMode": "none",
+    "textMode": "value"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "color": {
+      "mode": "thresholds"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "purple",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 4,
+   "type": "stat",
+   "title": "Backups on disk",
+   "gridPos": {
+    "x": 18,
+    "y": 0,
+    "w": 6,
+    "h": 5
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "dino_backups_total",
+     "refId": "A"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "colorMode": "background",
+    "graphMode": "none",
+    "textMode": "value"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "color": {
+      "mode": "thresholds"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "orange",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 5,
+   "type": "timeseries",
+   "title": "Scores in database over time",
+   "gridPos": {
+    "x": 0,
+    "y": 5,
+    "w": 24,
+    "h": 9
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "dino_scores_total",
+     "refId": "A",
+     "legendFormat": "rows"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 15
+     },
+     "color": {
+      "mode": "palette-classic"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom"
+    }
+   }
+  },
+  {
+   "id": 6,
+   "type": "timeseries",
+   "title": "Games submitted per minute",
+   "gridPos": {
+    "x": 0,
+    "y": 14,
+    "w": 12,
+    "h": 9
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "rate(dino_submissions_total[1m])*60",
+     "refId": "A",
+     "legendFormat": "submissions/min"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 15
+     },
+     "color": {
+      "mode": "palette-classic"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom"
+    }
+   }
+  },
+  {
+   "id": 7,
+   "type": "timeseries",
+   "title": "Memory used (MB)",
+   "gridPos": {
+    "x": 12,
+    "y": 14,
+    "w": 12,
+    "h": 9
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "(node_memory_MemTotal_bytes-node_memory_MemAvailable_bytes)/1024/1024",
+     "refId": "A",
+     "legendFormat": "used MB"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "lineWidth": 2,
+      "fillOpacity": 15
+     },
+     "color": {
+      "mode": "palette-classic"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom"
+    }
+   }
+  }
+ ]
+}

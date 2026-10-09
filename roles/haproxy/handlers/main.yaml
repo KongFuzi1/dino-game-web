@@ -1,0 +1,6 @@
+- name: reload haproxy
+  ansible.builtin.service:
+    name: haproxy
+    state: reloaded
+- name: save iptables
+  ansible.builtin.shell: iptables-save > /etc/iptables/rules.v4

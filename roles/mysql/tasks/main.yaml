@@ -1,0 +1,34 @@
+- name: Install MySQL server and Python bindings
+  ansible.builtin.apt:
+    name: [mysql-server, python3-pymysql]
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Low-memory MySQL config
+  ansible.builtin.template:
+    src: demo.cnf.j2
+    dest: /etc/mysql/mysql.conf.d/zz-demo.cnf
+    mode: "0644"
+  notify: restart mysql
+
+- name: Start MySQL
+  ansible.builtin.service:
+    name: mysql
+    state: started
+    enabled: true
+
+- name: Create database
+  community.mysql.mysql_db:
+    name: "{{ mysql_db }}"
+    state: present
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+
+- name: Create application user
+  community.mysql.mysql_user:
+    name: "{{ mysql_user }}"
+    password: "{{ mysql_password }}"
+    host: localhost
+    priv: "{{ mysql_db }}.*:ALL"
+    state: present
+    login_unix_socket: /var/run/mysqld/mysqld.sock

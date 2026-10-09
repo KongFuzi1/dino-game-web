@@ -1,0 +1,56 @@
+- name: Install runtime
+  ansible.builtin.apt:
+    name: [python3-flask, python3-pymysql, python3-prometheus-client, gunicorn]
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Service user
+  ansible.builtin.user:
+    name: dino
+    system: true
+    shell: /usr/sbin/nologin
+    home: /opt/dino
+    create_home: false
+
+- name: App directory
+  ansible.builtin.file:
+    path: /opt/dino/static
+    state: directory
+    owner: root
+    mode: "0755"
+
+- name: App code
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: "0644"
+  loop:
+    - { src: app.py, dest: /opt/dino/app.py }
+    - { src: index.html, dest: /opt/dino/static/index.html }
+  notify: restart dino
+
+- name: Environment file with DB credentials
+  ansible.builtin.template:
+    src: dino.env.j2
+    dest: /etc/default/dino
+    owner: root
+    group: dino
+    mode: "0640"
+  notify: restart dino
+
+- name: Systemd unit
+  ansible.builtin.template:
+    src: dino.service.j2
+    dest: /etc/systemd/system/dino.service
+    mode: "0644"
+  notify: [reload systemd, restart dino]
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Start the game
+  ansible.builtin.systemd:
+    name: dino
+    state: started
+    enabled: true

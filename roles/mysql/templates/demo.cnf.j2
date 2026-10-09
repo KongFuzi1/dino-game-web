@@ -1,0 +1,10 @@
+# {{ ansible_managed }} - keep MySQL small enough for a 1 GB VM
+[mysqld]
+bind-address            = 127.0.0.1
+innodb_buffer_pool_size = 32M
+innodb_log_buffer_size  = 4M
+performance_schema      = OFF
+max_connections         = 30
+table_open_cache        = 200
+tmp_table_size          = 8M
+key_buffer_size         = 4M

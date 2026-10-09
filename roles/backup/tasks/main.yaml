@@ -1,0 +1,30 @@
+- name: Backup directory
+  ansible.builtin.file:
+    path: "{{ backup_dir }}"
+    state: directory
+    owner: root
+    group: dino
+    mode: "0750"
+
+- name: Backup script
+  ansible.builtin.template:
+    src: dino-backup.sh.j2
+    dest: /usr/local/bin/dino-backup
+    mode: "0755"
+
+- name: Backup service and timer
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "/etc/systemd/system/{{ item }}"
+    mode: "0644"
+  loop: [dino-backup.service, dino-backup.timer]
+  notify: reload systemd
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable backup timer
+  ansible.builtin.systemd:
+    name: dino-backup.timer
+    state: started
+    enabled: true

@@ -1,0 +1,10 @@
+demo1 ansible_host=129.151.208.139 ansible_ssh_private_key_file=~/.ssh/oracle_openclaw
+
+[db_servers]
+demo1
+
+[web_servers]
+demo1
+
+[monitoring_servers]
+demo1

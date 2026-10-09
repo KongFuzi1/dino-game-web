@@ -1,0 +1,10 @@
+[Unit]
+Description=Back up {{ mysql_db }} every minute
+
+[Timer]
+OnCalendar={{ backup_interval }}
+AccuracySec=1s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

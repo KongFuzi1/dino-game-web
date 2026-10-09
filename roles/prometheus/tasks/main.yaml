@@ -1,0 +1,36 @@
+- name: Install Prometheus and exporters
+  ansible.builtin.apt:
+    name: [prometheus, prometheus-node-exporter]
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Prometheus config
+  ansible.builtin.template:
+    src: prometheus.yml.j2
+    dest: /etc/prometheus/prometheus.yml
+    mode: "0644"
+  notify: restart prometheus
+
+- name: Listen on localhost only, short retention
+  ansible.builtin.copy:
+    dest: /etc/default/prometheus
+    mode: "0644"
+    content: |
+      ARGS="--web.listen-address=127.0.0.1:9090 --storage.tsdb.retention.time=7d --web.external-url=http://{{ prometheus_host }}/"
+  notify: restart prometheus
+
+- name: Node exporter on localhost only
+  ansible.builtin.copy:
+    dest: /etc/default/prometheus-node-exporter
+    mode: "0644"
+    content: |
+      ARGS="--web.listen-address=127.0.0.1:9100"
+  notify: restart node exporter
+
+- name: Start Prometheus and node exporter
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: started
+    enabled: true
+  loop: [prometheus, prometheus-node-exporter]

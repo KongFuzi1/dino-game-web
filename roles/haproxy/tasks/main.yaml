@@ -1,0 +1,32 @@
+- name: Install HAProxy
+  ansible.builtin.apt:
+    name: haproxy
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: HAProxy config
+  ansible.builtin.template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    mode: "0644"
+    validate: haproxy -c -f %s
+  notify: reload haproxy
+
+- name: Allow the front port through iptables
+  ansible.builtin.iptables:
+    chain: INPUT
+    protocol: tcp
+    destination_port: "{{ haproxy_port }}"
+    ctstate: NEW
+    jump: ACCEPT
+    action: insert
+    rule_num: 6
+    comment: "haproxy demo"
+  notify: save iptables
+
+- name: Start HAProxy
+  ansible.builtin.service:
+    name: haproxy
+    state: started
+    enabled: true
