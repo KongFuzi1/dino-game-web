@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="et">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Dino</title>
+<link rel="stylesheet" href="/static/runner.css">
+<style>
+  body { background:#f7f7f7; color:#2b2b2b; font-family: system-ui, sans-serif; display:flex; flex-direction:column; align-items:center; padding:12px 16px 32px; gap:14px; box-sizing:border-box; height:auto; min-height:100%; }
+  h1 { font-size:1.1rem; margin:0; letter-spacing:.15em; color:#535353; }
+  #game { position:relative; width:100%; max-width:600px; height:150px; overflow:hidden; }
+  #game .interstitial-wrapper { position:relative; }
+  .hint { color:#777; font-size:.9rem; text-align:center; min-height:1.2em; }
+  form { display:none; gap:8px; width:100%; max-width:600px; }
+  form.show { display:flex; }
+  input { flex:1; font-size:1.1rem; padding:10px; border:1px solid #bbb; border-radius:6px; background:#fff; }
+  button { font-size:1.1rem; padding:10px 16px; border:0; border-radius:6px; background:#535353; color:#fff; }
+  .status { width:100%; max-width:600px; padding:8px 12px; border-radius:6px; font-weight:600; display:none; }
+  .status.ok  { display:block; background:#d9f2e3; color:#1b7a3e; }
+  .status.bad { display:block; background:#fde2e2; color:#b00020; }
+  table { width:100%; max-width:600px; border-collapse:collapse; font-variant-numeric: tabular-nums; table-layout:fixed; }
+  th:nth-child(1), td:nth-child(1) { width:2.2em; }
+  th:nth-child(3), td:nth-child(3) { width:5.5em; color:#777; }
+  th:nth-child(4), td:nth-child(4) { width:5em; }
+  @media (max-width: 480px) { th:nth-child(3), td:nth-child(3) { display:none; } }
+  td, th { padding:6px 8px; text-align:left; border-bottom:1px solid #ddd; }
+  td:last-child, th:last-child { text-align:right; font-weight:600; }
+  footer { color:#aaa; font-size:.7rem; }
+</style>
+</head>
+<body class="offline">
+<h1>DINO</h1>
+<div id="game">
+  <div class="interstitial-wrapper">
+    <div id="main-content"><div class="icon icon-offline"></div></div>
+  </div>
+</div>
+<div class="hint" id="hint">Tühik / puudutus = hüppa. Alla-nool = kükita.</div>
+<form id="f" autocomplete="off">
+  <input id="name" maxlength="16" placeholder="Sinu nimi" required>
+  <button type="submit">Salvesta skoor</button>
+</form>
+<div class="status" id="status"></div>
+<table><thead><tr><th>#</th><th>Nimi</th><th>Kell</th><th>Skoor</th></tr></thead><tbody id="board"></tbody></table>
+<footer>T-Rex runner: © The Chromium Authors, BSD license</footer>
+
+<div id="offline-resources">
+  <img id="offline-resources-1x" src="/static/assets/default_100_percent/100-offline-sprite.png">
+  <img id="offline-resources-2x" src="/static/assets/default_200_percent/200-offline-sprite.png">
+  <template id="audio-resources"></template>
+</div>
+
+<script src="/static/runner.js"></script>
+<script>
+(() => {
+  // Harder than stock Chrome: games should last ~20-30 s even for good players.
+  Runner.config.ACCELERATION = 0.0025;
+  Runner.config.MAX_SPEED = 20;
+
+  const form = document.getElementById('f'), nameEl = document.getElementById('name');
+  const statusEl = document.getElementById('status'), board = document.getElementById('board'), hint = document.getElementById('hint');
+  try { nameEl.value = localStorage.getItem('dino_name') || ''; } catch (e) {}
+
+  // Hook the runner's game over: compute the same score the meter shows and offer to save it.
+  const origGameOver = Runner.prototype.gameOver;
+  Runner.prototype.gameOver = function () {
+    origGameOver.apply(this, arguments);
+    const score = Math.round(this.distanceRan * this.distanceMeter.config.COEFFICIENT);
+    form.dataset.score = score;
+    form.classList.add('show');
+    hint.textContent = `Skoor ${score}. Salvesta või mängi uuesti.`;
+  };
+  const origRestart = Runner.prototype.restart;
+  Runner.prototype.restart = function () { form.classList.remove('show'); hint.textContent = ''; return origRestart.apply(this, arguments); };
+
+  // Don't let the game eat keystrokes while typing a name.
+  nameEl.addEventListener('keydown', e => e.stopPropagation(), true);
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const name = nameEl.value.trim(), score = +form.dataset.score;
+    try { localStorage.setItem('dino_name', name); } catch (e) {}
+    form.classList.remove('show');
+    try {
+      const r = await fetch('/api/scores', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, score }) });
+      const j = await r.json();
+      setStatus(j.ok ? `Salvestatud! Koht #${j.rank}` : 'Andmebaas ei vasta: ' + j.error, j.ok);
+    } catch (err) { setStatus('Server ei vasta', false); }
+    loadBoard();
+  });
+
+  function setStatus(msg, ok) { statusEl.textContent = msg; statusEl.className = 'status ' + (ok ? 'ok' : 'bad'); }
+  const esc = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  async function loadBoard() {
+    try {
+      const r = await fetch('/api/scores'), j = await r.json();
+      if (!j.ok) { setStatus('Andmebaas ei vasta: ' + j.error, false); board.innerHTML = ''; return; }
+      if (statusEl.className.includes('bad')) setStatus(`Andmebaas on tagasi. ${j.total} skoori.`, true);
+      board.innerHTML = j.scores.map((s, i) => `<tr><td>${i + 1}</td><td>${esc(s.name)}</td><td>${s.played_at}</td><td>${s.score}</td></tr>`).join('');
+    } catch (err) { setStatus('Server ei vasta', false); }
+  }
+  loadBoard(); setInterval(loadBoard, 5000);
+})();
+</script>
+</body>
+</html>
