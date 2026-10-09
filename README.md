@@ -14,7 +14,7 @@ gets dropped live, and `ansible-playbook restore.yaml` brings it back.
 | `mysql`      | MySQL 8 tuned for a 1 GB VM, `dino` database and user                   |
 | `backup`     | `mysqldump` every minute via systemd timer, keeps the newest 120 dumps  |
 | `haproxy`    | Host-based routing: `dino.*` → game, `grafana.*`, `prometheus.*`        |
-| `dino`       | Flask + gunicorn: static flappy bird, `/api/scores`, `/metrics`         |
+| `dino`       | Flask + gunicorn: static dino runner, `/api/scores`, `/metrics`         |
 | `prometheus` | Scrapes the game, node exporter and itself every 5 s                    |
 | `grafana`    | Anonymous viewer access, provisioned Prometheus datasource + dashboard  |
 

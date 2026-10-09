@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="et">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Dino</title>
+<link rel="stylesheet" href="/static/runner.css">
+<style>
+  html, body { height: auto; min-height: 100%; }
+  body { background:#f7f7f7; color:#2b2b2b; font-family: system-ui, sans-serif; display:flex; flex-direction:column; align-items:center; padding:12px 16px 32px; gap:14px; box-sizing:border-box; }
+  h1 { font-size:1.1rem; margin:0; letter-spacing:.15em; color:#535353; }
+  .who { color:#777; font-size:.9rem; }
+  #game { position:relative; width:100%; max-width:600px; height:150px; overflow:hidden; cursor:pointer; user-select:none; -webkit-user-select:none; touch-action:none; }
+  #game .interstitial-wrapper { position:relative; height:150px; }
+  .hint { color:#777; font-size:.9rem; text-align:center; min-height:1.2em; }
+  table { width:100%; max-width:600px; border-collapse:collapse; font-variant-numeric: tabular-nums; table-layout:fixed; }
+  td, th { padding:6px 8px; text-align:left; border-bottom:1px solid #ddd; }
+  td:first-child, th:first-child { width:2.2em; color:#999; }
+  td:last-child, th:last-child { width:5em; text-align:right; font-weight:600; }
+  tr.you td { background:#ffe8a3; }
+  .status { width:100%; max-width:600px; padding:8px 12px; border-radius:6px; font-weight:600; display:none; }
+  .status.ok  { display:block; background:#d9f2e3; color:#1b7a3e; }
+  .status.bad { display:block; background:#fde2e2; color:#b00020; }
+  footer { color:#aaa; font-size:.7rem; }
+  .ov { position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.55); padding:16px; }
+  .ov.show { display:flex; }
+  .card { width:100%; max-width:340px; background:#fff; border-radius:10px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,.3); }
+  .card h2 { margin:0 0 12px; font-size:1.2rem; text-align:center; letter-spacing:.1em; color:#535353; }
+  .card input { width:100%; box-sizing:border-box; font-size:1.2rem; padding:10px; border:1px solid #bbb; border-radius:6px; margin-bottom:10px; }
+  .card button { width:100%; font-size:1.2rem; padding:10px; border:0; border-radius:6px; background:#535353; color:#fff; font-weight:700; }
+</style>
+</head>
+<body class="offline">
+<h1>DINO</h1>
+<div class="who" id="who"></div>
+<div id="game">
+  <div class="interstitial-wrapper">
+    <div id="main-content"><div class="icon icon-offline"></div></div>
+  </div>
+</div>
+<div class="hint" id="hint">Puuduta mängu või vajuta tühikut = hüppa. Alla-nool = kükita.</div>
+<div class="status" id="status"></div>
+<table><thead><tr><th>#</th><th>Nimi</th><th>Skoor</th></tr></thead><tbody id="board"></tbody></table>
+<footer>T-Rex runner: © The Chromium Authors, BSD license</footer>
+
+<div class="ov" id="nameov">
+  <form class="card" id="nameform" autocomplete="off">
+    <h2>DINO</h2>
+    <input id="name" maxlength="16" placeholder="Sinu nimi" required>
+    <button type="submit">Mängi</button>
+  </form>
+</div>
+
+<div id="offline-resources">
+  <img id="offline-resources-1x" src="/static/assets/default_100_percent/100-offline-sprite.png">
+  <img id="offline-resources-2x" src="/static/assets/default_200_percent/200-offline-sprite.png">
+  <template id="audio-resources"></template>
+</div>
+
+<script src="/static/runner.js"></script>
+<script>
+(() => {
+  // Harder than stock Chrome so games last ~20-30 s.
+  Runner.config.ACCELERATION = 0.0025;
+  Runner.config.MAX_SPEED = 20;
+
+  const $ = id => document.getElementById(id);
+  const game = $('game'), hint = $('hint'), statusEl = $('status'), board = $('board'), who = $('who');
+  const nameov = $('nameov'), nameform = $('nameform'), nameEl = $('name');
+  let playerName = '', lastScore = null;
+  try { playerName = localStorage.getItem('dino_name') || ''; } catch (e) {}
+  nameEl.value = playerName;
+
+  // ---- name first ----
+  nameov.classList.add('show');
+  ['keydown', 'keyup', 'touchstart', 'mousedown'].forEach(t => nameov.addEventListener(t, e => e.stopPropagation()));
+  nameform.addEventListener('submit', e => {
+    e.preventDefault();
+    playerName = nameEl.value.trim(); if (!playerName) return;
+    try { localStorage.setItem('dino_name', playerName); } catch (e) {}
+    who.textContent = playerName; nameov.classList.remove('show'); nameEl.blur();
+  });
+  who.addEventListener('click', () => { nameov.classList.add('show'); nameEl.focus(); });
+
+  // ---- input: the stock runner only listens to the keyboard (desktop) or a page-sized touch
+  // overlay (mobile). Replace both with one handler on the game area. ----
+  Runner.prototype.createTouchController = function () {};
+  Runner.prototype.startListening = function () { document.addEventListener('keydown', this); document.addEventListener('keyup', this); };
+  Runner.prototype.stopListening = function () { document.removeEventListener('keydown', this); document.removeEventListener('keyup', this); };
+  const fake = type => ({ type, keyCode: 0, target: null, currentTarget: null, preventDefault() {} });
+  const press = e => {
+    const r = Runner.instance_; if (!r || !r.tRex || nameov.classList.contains('show')) return;
+    e.preventDefault();
+    if (r.crashed) { if (Date.now() - r.time > 750) r.restart(); return; }
+    r.onKeyDown(fake('touchstart'));
+  };
+  const release = () => { const r = Runner.instance_; if (r && !r.crashed) r.onKeyUp(fake('touchend')); };
+  game.addEventListener('touchstart', press, { passive: false });
+  game.addEventListener('touchend', release);
+  game.addEventListener('mousedown', press);
+  game.addEventListener('mouseup', release);
+  // Space must not start a game while the name dialog is up.
+  document.addEventListener('keydown', e => { if (nameov.classList.contains('show')) e.stopImmediatePropagation(); }, true);
+
+  // ---- game over: save with the game's own score formula, then refresh the board ----
+  const origGameOver = Runner.prototype.gameOver;
+  Runner.prototype.gameOver = function () {
+    origGameOver.apply(this, arguments);
+    const score = Math.round(this.distanceRan * this.distanceMeter.config.COEFFICIENT);
+    lastScore = score;
+    hint.textContent = `Skoor ${score}. Puuduta mängu, et uuesti mängida.`;
+    fetch('/api/scores', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: playerName, score }) })
+      .then(r => r.json())
+      .then(j => setStatus(j.ok ? `${playerName}: ${score} punkti, koht #${j.rank}` : 'Andmebaas ei vasta: ' + j.error, j.ok))
+      .catch(() => setStatus('Server ei vasta', false))
+      .then(loadBoard);
+  };
+  const origRestart = Runner.prototype.restart;
+  Runner.prototype.restart = function () { hint.textContent = ''; return origRestart.apply(this, arguments); };
+
+  function setStatus(msg, ok) { statusEl.textContent = msg; statusEl.className = 'status ' + (ok ? 'ok' : 'bad'); }
+  const esc = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  async function loadBoard() {
+    try {
+      const r = await fetch('/api/scores'), j = await r.json();
+      if (!j.ok) { setStatus('Andmebaas ei vasta: ' + j.error, false); board.innerHTML = ''; return; }
+      if (statusEl.className.includes('bad')) setStatus(`Andmebaas on tagasi. ${j.total} skoori.`, true);
+      board.innerHTML = j.scores.map((s, i) => `<tr${s.name === playerName && s.score === lastScore ? ' class="you"' : ''}><td>${i + 1}</td><td>${esc(s.name)}</td><td>${s.score}</td></tr>`).join('');
+    } catch (err) { setStatus('Server ei vasta', false); }
+  }
+  loadBoard(); setInterval(loadBoard, 5000);
+})();
+</script>
+</body>
+</html>

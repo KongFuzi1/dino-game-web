@@ -12,5 +12,5 @@ mysql_user: dino
 mysql_password: "{{ lookup('env', 'TETRIS_DB_PASSWORD') | default('dino-demo-2026', true) }}"
 
 backup_dir: /var/backups/dino
-backup_keep: 120          # dumps to keep (minutes of history at 1/min)
+backup_keep: 30           # dumps to keep (30 minutes of history at 1/min)
 backup_interval: "*:*:00" # systemd OnCalendar: every minute
