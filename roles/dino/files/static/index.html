@@ -12,6 +12,10 @@
   .who { color:#777; font-size:.9rem; }
   #game { position:relative; width:100%; max-width:600px; height:150px; overflow:hidden; cursor:pointer; user-select:none; -webkit-user-select:none; touch-action:none; }
   #game .interstitial-wrapper { position:relative; height:150px; }
+  .pad { display:none; width:100%; max-width:600px; gap:12px; }
+  body.touch .pad { display:flex; }
+  .pad button { flex:1; font-size:1.3rem; font-weight:800; letter-spacing:.1em; padding:18px 0; border:0; border-radius:10px; background:#535353; color:#fff; touch-action:none; user-select:none; -webkit-user-select:none; }
+  .pad button:active { background:#2b2b2b; }
   .hint { color:#777; font-size:.9rem; text-align:center; min-height:1.2em; }
   table { width:100%; max-width:600px; border-collapse:collapse; font-variant-numeric: tabular-nums; table-layout:fixed; }
   td, th { padding:6px 8px; text-align:left; border-bottom:1px solid #ddd; }
@@ -38,7 +42,8 @@
     <div id="main-content"><div class="icon icon-offline"></div></div>
   </div>
 </div>
-<div class="hint" id="hint">Puuduta mängu või vajuta tühikut = hüppa.</div>
+<div class="pad" id="pad"><button type="button" id="btnJump">HÜPPA</button><button type="button" id="btnDuck">KÜKI</button></div>
+<div class="hint" id="hint">Puuduta mängu või vajuta tühikut = hüppa. Alla-nool või libista alla = kükita.</div>
 <div class="status" id="status"></div>
 <table><thead><tr><th>#</th><th>Nimi</th><th>Skoor</th></tr></thead><tbody id="board"></tbody></table>
 <footer>T-Rex runner: © The Chromium Authors, BSD license</footer>
@@ -95,7 +100,7 @@
   Runner.prototype.setArcadeModeContainerScale = function () {};
   Runner.prototype.startListening = function () { document.addEventListener('keydown', this); document.addEventListener('keyup', this); };
   Runner.prototype.stopListening = function () { document.removeEventListener('keydown', this); document.removeEventListener('keyup', this); };
-  const fake = type => ({ type, keyCode: 0, target: game, currentTarget: game, preventDefault() {} });
+  const fake = (type, keyCode = 0) => ({ type, keyCode, target: game, currentTarget: game, preventDefault() {} });
   const press = e => {
     const r = Runner.instance_; if (!r || !r.tRex || nameov.classList.contains('show')) return;
     e.preventDefault();
@@ -107,6 +112,23 @@
   game.addEventListener('touchend', release);
   game.addEventListener('mousedown', press);
   game.addEventListener('mouseup', release);
+
+  // Duck = down arrow (keyCode 40) for the runner; while airborne it becomes a fast drop.
+  const duckDown = () => { const r = Runner.instance_; if (r && r.playing && !r.crashed) r.onKeyDown(fake('keydown', 40)); };
+  const duckUp = () => { const r = Runner.instance_; if (r && r.tRex) r.onKeyUp(fake('keyup', 40)); };
+  // Swipe down on the game area ducks until the finger lifts.
+  let touchY = null, ducking = false;
+  game.addEventListener('touchstart', e => { touchY = e.touches[0].clientY; ducking = false; }, { passive: true });
+  game.addEventListener('touchmove', e => {
+    if (touchY !== null && !ducking && e.touches[0].clientY - touchY > 30) { ducking = true; duckDown(); }
+  }, { passive: true });
+  game.addEventListener('touchend', () => { if (ducking) duckUp(); ducking = false; touchY = null; });
+  // Touch-only buttons.
+  if ('ontouchstart' in window || navigator.maxTouchPoints > 0) document.body.classList.add('touch');
+  const btnJump = $('btnJump'), btnDuck = $('btnDuck');
+  btnJump.addEventListener('pointerdown', press); btnJump.addEventListener('pointerup', release); btnJump.addEventListener('pointercancel', release);
+  btnDuck.addEventListener('pointerdown', e => { e.preventDefault(); duckDown(); });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => btnDuck.addEventListener(t, duckUp));
   // Space must not start a game while the name dialog is up.
   document.addEventListener('keydown', e => { if (nameov.classList.contains('show')) e.stopImmediatePropagation(); }, true);
 

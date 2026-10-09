@@ -26,6 +26,15 @@ const shot = await send('Page.captureScreenshot', { format: 'png' });
 console.log('playing after name submit (auto-start):', await ev(`Runner.instance_.playing`), 'distance:', await ev(`Math.round(Runner.instance_.distanceRan)`));
 await tap(); await sleep(400);
 console.log('jumping after 2nd tap:', await ev(`Runner.instance_.tRex.jumping`));
+await sleep(900);
+await ev(`document.getElementById('btnDuck').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true})); 1`); await sleep(200);
+console.log('ducking while KÜKI held:', await ev(`Runner.instance_.tRex.ducking`));
+await ev(`document.getElementById('btnDuck').dispatchEvent(new PointerEvent('pointerup',{bubbles:true})); 1`); await sleep(200);
+console.log('standing after release:', !(await ev(`Runner.instance_.tRex.ducking`)));
+await ev(`(()=>{const g=document.getElementById('game'); const t=(y)=>({touches:[{clientX:100,clientY:y}]}); g.dispatchEvent(Object.assign(new Event('touchstart',{bubbles:true}),t(100))); g.dispatchEvent(Object.assign(new Event('touchmove',{bubbles:true}),t(150))); return 1})()`); await sleep(200);
+console.log('ducking on swipe down:', await ev(`Runner.instance_.tRex.ducking`));
+await ev(`document.getElementById('game').dispatchEvent(new Event('touchend',{bubbles:true})); 1`); await sleep(200);
+console.log('standing after swipe end:', !(await ev(`Runner.instance_.tRex.ducking`)));
 // run until it crashes (no more taps), max 25 s
 for (let i = 0; i < 50 && !(await ev(`Runner.instance_.crashed`)); i++) await sleep(500);
 console.log('crashed:', await ev(`Runner.instance_.crashed`), 'score shown:', await ev(`document.getElementById('hint').textContent`));
