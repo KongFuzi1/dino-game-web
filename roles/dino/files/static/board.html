@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="et">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Edetabel</title>
+<style>
+  body { margin:0; min-height:100vh; background:#4ec0ca; color:#543847; font-family: system-ui, sans-serif; display:flex; flex-direction:column; align-items:center; padding:24px 16px; box-sizing:border-box; }
+  h1 { font-size:2.2rem; margin:0 0 4px; letter-spacing:.05em; }
+  .sub { font-size:1.1rem; margin-bottom:18px; }
+  .status { padding:10px 18px; border-radius:8px; font-weight:700; font-size:1.3rem; margin-bottom:18px; }
+  .status.ok { background:#d9f2e3; color:#1b7a3e; } .status.bad { background:#fde2e2; color:#b00020; }
+  table { width:100%; max-width:720px; border-collapse:collapse; background:#ded895; border:3px solid #543847; border-radius:8px; overflow:hidden; font-size:1.5rem; font-variant-numeric: tabular-nums; }
+  td, th { padding:10px 16px; text-align:left; border-bottom:2px solid #54384733; }
+  td:last-child, th:last-child { text-align:right; font-weight:800; }
+  td:first-child { width:2.5em; color:#8a6b4f; }
+  tr:first-child td:first-child { color:#d4a017; }
+  a { color:#543847; font-size:.9rem; margin-top:18px; }
+</style>
+</head>
+<body>
+<h1>FLAPPY</h1>
+<div class="sub" id="sub">&nbsp;</div>
+<div class="status" id="status"></div>
+<table><tbody id="board"></tbody></table>
+<a href="/">mängi: dino.129-151-208-139.nip.io:8080</a>
+<script>
+  const board = document.getElementById('board'), statusEl = document.getElementById('status'), sub = document.getElementById('sub');
+  const esc = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  let wasBad = false;
+  async function load() {
+    try {
+      const r = await fetch('/api/scores'), j = await r.json();
+      if (!j.ok) { statusEl.textContent = 'Andmebaas ei vasta: ' + j.error; statusEl.className = 'status bad'; board.innerHTML = ''; sub.innerHTML = '&nbsp;'; wasBad = true; return; }
+      if (wasBad) { statusEl.textContent = `Andmebaas on tagasi: ${j.total} skoori`; statusEl.className = 'status ok'; wasBad = false; }
+      sub.textContent = `${j.total} mängu andmebaasis`;
+      board.innerHTML = j.scores.map((s, i) => `<tr><td>${i + 1}.</td><td>${esc(s.name)}</td><td>${s.played_at}</td><td>${s.score}</td></tr>`).join('');
+    } catch (e) { statusEl.textContent = 'Server ei vasta'; statusEl.className = 'status bad'; wasBad = true; }
+  }
+  load(); setInterval(load, 3000);
+</script>
+</body>
+</html>

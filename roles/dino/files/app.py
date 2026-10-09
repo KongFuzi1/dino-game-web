@@ -48,7 +48,12 @@ def db():
 
 @app.get("/")
 def index():
-    return send_from_directory("static", "index.html")
+    return send_from_directory("static/flappy", "index.html")
+
+
+@app.get("/board")
+def board():
+    return send_from_directory("static", "board.html")
 
 
 @app.get("/healthz")
