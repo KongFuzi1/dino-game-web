@@ -1,6 +1,10 @@
 - name: Install runtime
   ansible.builtin.apt:
-    name: [python3-flask, python3-pymysql, python3-prometheus-client, gunicorn]
+    name:
+      - python3-flask
+      - python3-prometheus-client
+      - gunicorn
+      - "{{ {'mysql': 'python3-pymysql', 'postgres': 'python3-psycopg2', 'sqlite': 'python3'}[db_engine] }}"
     state: present
     update_cache: true
     cache_valid_time: 3600
@@ -15,26 +19,51 @@
 
 - name: App directory
   ansible.builtin.file:
-    path: /opt/dino/static
+    path: /opt/dino
     state: directory
     owner: root
     mode: "0755"
 
-- name: App code
+- name: App code from this checkout
   ansible.builtin.copy:
-    src: app.py
-    dest: /opt/dino/app.py
-    mode: "0644"
-  notify: restart dino
-
-- name: Static game files
-  ansible.builtin.copy:
-    src: static/
-    dest: /opt/dino/static/
+    src: "{{ playbook_dir }}/app/"
+    dest: /opt/dino/
     mode: "0644"
     directory_mode: "0755"
+  when: dino_source == 'local'
+  notify: restart dino
 
-- name: Environment file with DB credentials
+- name: App code from GitHub ({{ dino_repo }}@{{ dino_version }})
+  when: dino_source == 'github'
+  block:
+    - name: Download release tarball
+      ansible.builtin.get_url:
+        url: "https://github.com/{{ dino_repo }}/archive/{{ dino_version }}.tar.gz"
+        dest: "/opt/dino-{{ dino_version | regex_replace('[^A-Za-z0-9._-]', '_') }}.tar.gz"
+        mode: "0644"
+      register: tarball
+
+    - name: Is the app already unpacked?
+      ansible.builtin.stat:
+        path: /opt/dino/app.py
+      register: app_present
+
+    - name: Unpack only app/ into /opt/dino
+      ansible.builtin.unarchive:
+        src: "{{ tarball.dest }}"
+        dest: /opt/dino
+        remote_src: true
+        extra_opts: ["--strip-components=2", "--wildcards", "*/app/*"]
+      when: tarball.changed or not app_present.stat.exists
+      notify: restart dino
+
+- name: Game settings for the page
+  ansible.builtin.template:
+    src: config.json.j2
+    dest: /opt/dino/config.json
+    mode: "0644"
+
+- name: Environment file (DB URL and friends)
   ansible.builtin.template:
     src: dino.env.j2
     dest: /etc/default/dino

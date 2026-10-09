@@ -7,7 +7,7 @@
 
 - name: Low-memory MySQL config
   ansible.builtin.template:
-    src: demo.cnf.j2
+    src: mysql-demo.cnf.j2
     dest: /etc/mysql/mysql.conf.d/zz-demo.cnf
     mode: "0644"
   notify: restart mysql
@@ -20,15 +20,15 @@
 
 - name: Create database
   community.mysql.mysql_db:
-    name: "{{ mysql_db }}"
+    name: "{{ db_name }}"
     state: present
     login_unix_socket: /var/run/mysqld/mysqld.sock
 
 - name: Create application user
   community.mysql.mysql_user:
-    name: "{{ mysql_user }}"
-    password: "{{ mysql_password }}"
+    name: "{{ db_user }}"
+    password: "{{ db_password }}"
     host: localhost
-    priv: "{{ mysql_db }}.*:ALL"
+    priv: "{{ db_name }}.*:ALL"
     state: present
     login_unix_socket: /var/run/mysqld/mysqld.sock

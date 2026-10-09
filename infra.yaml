@@ -2,17 +2,17 @@
 - name: Database servers
   hosts: db_servers
   roles:
-    - { role: mysql,  tags: [mysql] }
-    - { role: backup, tags: [backup] }
+    - { role: database, tags: [database] }
+    - { role: backup,   tags: [backup] }
 
 - name: Web servers
   hosts: web_servers
   roles:
     - { role: haproxy, tags: [haproxy] }
-    - { role: dino, tags: [dino] }
+    - { role: dino,    tags: [dino] }
 
 - name: Monitoring servers
   hosts: monitoring_servers
   roles:
-    - { role: prometheus, tags: [prometheus] }
-    - { role: grafana,    tags: [grafana] }
+    - { role: prometheus, tags: [prometheus], when: monitoring_enabled }
+    - { role: grafana,    tags: [grafana],    when: monitoring_enabled }

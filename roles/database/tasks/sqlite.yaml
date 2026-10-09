@@ -1,0 +1,7 @@
+- name: Directory for the SQLite file
+  ansible.builtin.file:
+    path: "{{ sqlite_path | dirname }}"
+    state: directory
+    owner: dino
+    group: dino
+    mode: "0750"

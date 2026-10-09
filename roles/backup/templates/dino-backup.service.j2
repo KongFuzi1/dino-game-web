@@ -1,6 +1,6 @@
 [Unit]
-Description=Dump the {{ mysql_db }} database
-After=mysql.service
+Description=Dump the {{ db_name }} database
+After=network.target
 
 [Service]
 Type=oneshot

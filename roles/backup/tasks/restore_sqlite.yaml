@@ -1,0 +1,13 @@
+- name: Put the backup copy in place
+  ansible.builtin.copy:
+    src: "{{ dump_file }}"
+    dest: "{{ sqlite_path }}"
+    remote_src: true
+    owner: dino
+    group: dino
+    mode: "0640"
+
+- name: Count restored scores
+  ansible.builtin.command: python3 -c "import sqlite3; print(sqlite3.connect('{{ sqlite_path }}').execute('SELECT COUNT(*) FROM scores').fetchone()[0])"
+  register: restored_count
+  changed_when: false

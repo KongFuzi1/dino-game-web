@@ -1,14 +1,27 @@
 ---
-# Restore the dino database from the newest backup on the DB host.
-# Usage: ansible-playbook restore.yaml            (newest dump)
-#        ansible-playbook restore.yaml -e dump=/var/backups/dino/dino-20261209T140000.sql
-- name: Restore dino database from backup
+# Restore the scores database from the newest backup (or a given one) on the DB host.
+#   ansible-playbook restore.yaml
+#   ansible-playbook restore.yaml -e dump=/var/backups/dino/dino-20261209T140000.sql
+- name: Restore the scores database from backup
   hosts: db_servers
+  vars:
+    backup_ext: "{{ {'mysql': 'sql', 'sqlite': 'db'}[db_engine] | default('') }}"
   tasks:
-    - name: Find newest dump
-      ansible.builtin.shell: ls -1t {{ backup_dir }}/dino-*.sql | head -1
+    - name: Backups are disabled
+      ansible.builtin.fail:
+        msg: "backup_enabled is false, nothing to restore from"
+      when: not backup_enabled
+
+    - name: Find newest usable dump (a dump taken while the DB was gone has no scores table)
+      ansible.builtin.shell: >
+        {% if db_engine == 'mysql' %}
+        grep -ls 'CREATE TABLE `scores`' {{ backup_dir }}/{{ db_name }}-*.{{ backup_ext }} | xargs -r ls -1t | head -1
+        {% else %}
+        ls -1t {{ backup_dir }}/{{ db_name }}-*.{{ backup_ext }} | head -1
+        {% endif %}
       register: newest
       changed_when: false
+      failed_when: newest.stdout == ''
       when: dump is not defined
 
     - name: Pick dump
@@ -17,28 +30,11 @@
 
     - name: Show which dump is used
       ansible.builtin.debug:
-        msg: "Restoring {{ dump_file }}"
+        msg: "Restoring {{ dump_file }} into {{ db_engine }}"
 
-    - name: Make sure the database exists
-      community.mysql.mysql_db:
-        name: "{{ mysql_db }}"
-        state: present
-        login_unix_socket: /var/run/mysqld/mysqld.sock
-
-    - name: Import the dump
-      community.mysql.mysql_db:
-        name: "{{ mysql_db }}"
-        state: import
-        target: "{{ dump_file }}"
-        login_unix_socket: /var/run/mysqld/mysqld.sock
-
-    - name: Count restored scores
-      community.mysql.mysql_query:
-        login_db: "{{ mysql_db }}"
-        query: SELECT COUNT(*) AS n FROM scores
-        login_unix_socket: /var/run/mysqld/mysqld.sock
-      register: count
+    - name: Restore ({{ db_engine }})
+      ansible.builtin.include_tasks: "roles/backup/tasks/restore_{{ db_engine }}.yaml"
 
     - name: Result
       ansible.builtin.debug:
-        msg: "Scores back in the database: {{ count.query_result[0][0].n }}"
+        msg: "Scores back in the database: {{ restored_count.stdout | trim }}"

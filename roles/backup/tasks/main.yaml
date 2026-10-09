@@ -1,30 +1,46 @@
-- name: Backup directory
-  ansible.builtin.file:
-    path: "{{ backup_dir }}"
-    state: directory
-    owner: root
-    group: dino
-    mode: "0750"
+- name: Backups are not supported for this engine yet
+  ansible.builtin.fail:
+    msg: "backup_enabled is true but db_engine={{ db_engine }} has no backup support yet (mysql, sqlite do). Set backup_enabled: false."
+  when: backup_enabled and db_engine not in ['mysql', 'sqlite']
 
-- name: Backup script
-  ansible.builtin.template:
-    src: dino-backup.sh.j2
-    dest: /usr/local/bin/dino-backup
-    mode: "0755"
-
-- name: Backup service and timer
-  ansible.builtin.template:
-    src: "{{ item }}.j2"
-    dest: "/etc/systemd/system/{{ item }}"
-    mode: "0644"
-  loop: [dino-backup.service, dino-backup.timer]
-  notify: reload systemd
-
-- name: Flush handlers
-  ansible.builtin.meta: flush_handlers
-
-- name: Enable backup timer
+- name: Disable the backup timer
   ansible.builtin.systemd:
     name: dino-backup.timer
-    state: started
-    enabled: true
+    state: stopped
+    enabled: false
+  failed_when: false
+  when: not backup_enabled
+
+- name: Set up backups
+  when: backup_enabled
+  block:
+    - name: Backup directory
+      ansible.builtin.file:
+        path: "{{ backup_dir }}"
+        state: directory
+        owner: root
+        group: dino
+        mode: "0750"
+
+    - name: Backup script ({{ db_engine }})
+      ansible.builtin.template:
+        src: "backup_{{ db_engine }}.sh.j2"
+        dest: /usr/local/bin/dino-backup
+        mode: "0755"
+
+    - name: Backup service and timer
+      ansible.builtin.template:
+        src: "{{ item }}.j2"
+        dest: "/etc/systemd/system/{{ item }}"
+        mode: "0644"
+      loop: [dino-backup.service, dino-backup.timer]
+      notify: reload systemd
+
+    - name: Flush handlers
+      ansible.builtin.meta: flush_handlers
+
+    - name: Enable backup timer
+      ansible.builtin.systemd:
+        name: dino-backup.timer
+        state: started
+        enabled: true

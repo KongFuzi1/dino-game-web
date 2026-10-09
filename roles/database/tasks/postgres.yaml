@@ -1,0 +1,24 @@
+- name: Install PostgreSQL and Python bindings
+  ansible.builtin.apt:
+    name: [postgresql, python3-psycopg2]
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Start PostgreSQL
+  ansible.builtin.service:
+    name: postgresql
+    state: started
+    enabled: true
+
+- name: Create application user
+  community.postgresql.postgresql_user:
+    name: "{{ db_user }}"
+    password: "{{ db_password }}"
+  become_user: postgres
+
+- name: Create database
+  community.postgresql.postgresql_db:
+    name: "{{ db_name }}"
+    owner: "{{ db_user }}"
+  become_user: postgres

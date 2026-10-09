@@ -1,7 +1,0 @@
-#!/bin/bash
-# {{ ansible_managed }} - dump the {{ mysql_db }} database, keep the newest {{ backup_keep }} dumps.
-set -euo pipefail
-DIR={{ backup_dir }}
-OUT="$DIR/dino-$(date +%Y%m%dT%H%M%S).sql"
-mysqldump --single-transaction --databases {{ mysql_db }} > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
-ls -1t "$DIR"/dino-*.sql | tail -n +$(( {{ backup_keep }} + 1 )) | xargs -r rm -f

@@ -1,0 +1,3 @@
+- name: Not supported yet
+  ansible.builtin.fail:
+    msg: "Restore for postgres is not implemented yet. Contributions welcome: pg_dump/psql in roles/backup."

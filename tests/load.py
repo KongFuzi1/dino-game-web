@@ -1,9 +1,11 @@
 """Simulate N phones: each polls /api/scores every 5 s and posts a score every ~20 s, for DURATION s.
-# Usage: python3 tests/load.py <phones> <seconds> [burst_spread_seconds]   e.g. 300 90 30
+# Usage: python3 tests/load.py <url> <phones> <seconds> [burst_spread_seconds]   e.g. http://dino.x.nip.io:8080 300 90 30
 Also a one-off burst where everyone loads the page assets at once (the QR-code moment)."""
 import http.client, json, random, sys, threading, time, collections
-HOST, PORT = "129.151.208.139", 8080
-N, DURATION = int(sys.argv[1]), int(sys.argv[2])
+from urllib.parse import urlparse
+_u = urlparse(sys.argv[1])                        # e.g. http://dino.203-0-113-10.nip.io:8080
+HOST, PORT, HOSTHDR = _u.hostname, _u.port or 80, _u.hostname
+N, DURATION = int(sys.argv[2]), int(sys.argv[3])
 lat = collections.defaultdict(list); codes = collections.Counter(); errors = collections.Counter()
 lock = threading.Lock()
 _tl = threading.local()
@@ -15,7 +17,7 @@ def req(method, path, body=None):
     t = time.perf_counter()
     try:
         c = conn()
-        hdr = {"Host": "dino.129-151-208-139.nip.io", "Content-Type": "application/json", "Connection": "keep-alive"}
+        hdr = {"Host": HOSTHDR, "Content-Type": "application/json", "Connection": "keep-alive"}
         c.request(method, path, body=json.dumps(body) if body else None, headers=hdr)
         r = c.getresponse(); r.read(); code = r.status
     except Exception as e:
@@ -26,7 +28,7 @@ def req(method, path, body=None):
     dt = time.perf_counter() - t
     with lock: lat[f"{method} {path}"].append(dt); codes[code] += 1
     return code
-BURST_SPREAD = float(sys.argv[3]) if len(sys.argv) > 3 else 0
+BURST_SPREAD = float(sys.argv[4]) if len(sys.argv) > 4 else 0
 def page_burst(i):
     time.sleep(random.random() * BURST_SPREAD)   # QR scans arrive over BURST_SPREAD seconds
     for p in ["/", "/static/runner.js", "/static/runner.css", "/static/assets/default_200_percent/200-offline-sprite.png", "/api/scores"]:

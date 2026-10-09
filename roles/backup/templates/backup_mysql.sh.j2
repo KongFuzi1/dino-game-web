@@ -1,0 +1,8 @@
+#!/bin/bash
+# {{ ansible_managed }} - dump the {{ db_name }} MySQL database, keep the newest {{ backup_keep }} dumps.
+set -euo pipefail
+trap 'rm -f "$OUT.tmp"' EXIT   # a failed dump (e.g. the DB is gone) leaves nothing behind
+DIR={{ backup_dir }}
+OUT="$DIR/{{ db_name }}-$(date +%Y%m%dT%H%M%S).sql"
+mysqldump --single-transaction --databases {{ db_name }} > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
+ls -1t "$DIR"/{{ db_name }}-*.sql | tail -n +$(( {{ backup_keep }} + 1 )) | xargs -r rm -f

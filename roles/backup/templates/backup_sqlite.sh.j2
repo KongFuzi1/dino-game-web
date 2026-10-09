@@ -1,0 +1,14 @@
+#!/bin/bash
+# {{ ansible_managed }} - consistent copy of the SQLite file via the online backup API, keep the newest {{ backup_keep }}.
+set -euo pipefail
+trap 'rm -f "$OUT.tmp"' EXIT   # a failed dump (e.g. the DB is gone) leaves nothing behind
+DIR={{ backup_dir }}
+OUT="$DIR/{{ db_name }}-$(date +%Y%m%dT%H%M%S).db"
+[ -e "{{ sqlite_path }}" ] || exit 0   # nothing to back up (the demo just deleted it)
+python3 - "$OUT" <<'PY'
+import sqlite3, sys
+src = sqlite3.connect("{{ sqlite_path }}"); dst = sqlite3.connect(sys.argv[1] + ".tmp")
+src.backup(dst); dst.close(); src.close()
+PY
+mv "$OUT.tmp" "$OUT"
+ls -1t "$DIR"/{{ db_name }}-*.db | tail -n +$(( {{ backup_keep }} + 1 )) | xargs -r rm -f

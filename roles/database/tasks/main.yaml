@@ -1,0 +1,10 @@
+- name: Service user (owns the SQLite file and runs the app)
+  ansible.builtin.user:
+    name: dino
+    system: true
+    shell: /usr/sbin/nologin
+    home: /opt/dino
+    create_home: false
+
+- name: Set up {{ db_engine }}
+  ansible.builtin.include_tasks: "{{ db_engine }}.yaml"

@@ -1,16 +1,38 @@
-# Public hostname base: *.nip.io resolves to the IP encoded in the name, no DNS setup needed.
+# ---- Where it lives ---------------------------------------------------------------------
+# Hostnames. *.nip.io resolves to the IP encoded in the name, so no DNS setup is needed.
 demo_domain: "129-151-208-139.nip.io"
 game_host: "dino.{{ demo_domain }}"
 grafana_host: "grafana.{{ demo_domain }}"
 prometheus_host: "prometheus.{{ demo_domain }}"
+haproxy_port: 80            # the port the audience connects to
 
-# HAProxy front port. 80 by default; demo1 already has nginx on 80, so host_vars overrides it.
-haproxy_port: 80
+# ---- Game source ------------------------------------------------------------------------
+dino_source: local          # local  = copy ./app from this checkout
+                            # github = fetch app/ from the repo below at dino_version (tag, branch or commit)
+dino_repo: KongFuzi1/ansible-web-dino
+dino_version: main
 
-mysql_db: dino
-mysql_user: dino
-mysql_password: "{{ lookup('env', 'TETRIS_DB_PASSWORD') | default('dino-demo-2026', true) }}"
+# ---- Game settings (served to the page as /config.json) ---------------------------------
+game_title: DINO
+game_acceleration: 0.0025   # Chrome default 0.001; higher = games end sooner
+game_max_speed: 20          # Chrome default 13
+leaderboard_size: 10
+poll_interval_ms: 5000      # how often phones refresh the leaderboard
+cache_ttl: 1                # seconds the leaderboard JSON is cached (app + HAProxy)
 
+# ---- Database ---------------------------------------------------------------------------
+db_engine: mysql            # mysql | postgres | sqlite
+db_name: dino
+db_user: dino
+db_password: "{{ lookup('env', 'DINO_DB_PASSWORD') | default('change-me-dino', true) }}"
+sqlite_path: /var/lib/dino/scores.db
+
+# ---- Backups (the point of the demo: drop the DB, restore it with Ansible) --------------
+backup_enabled: true        # supported for mysql and sqlite; postgres: not yet
 backup_dir: /var/backups/dino
-backup_keep: 30           # dumps to keep (30 minutes of history at 1/min)
-backup_interval: "*:*:00" # systemd OnCalendar: every minute
+backup_keep: 30             # dumps to keep
+backup_interval: "*:*:00"   # systemd OnCalendar; every minute
+
+# ---- Monitoring -------------------------------------------------------------------------
+monitoring_enabled: true    # Prometheus + Grafana (needs ~250 MB RAM)
+grafana_admin_password: "{{ db_password }}"

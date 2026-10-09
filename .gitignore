@@ -1,2 +1,4 @@
 *.retry
 .vault_password
+hosts
+host_vars/

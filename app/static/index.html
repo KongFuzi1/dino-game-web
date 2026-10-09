@@ -69,9 +69,16 @@
 <script src="/static/runner.js"></script>
 <script>
 (() => {
-  // Harder than stock Chrome so games last ~20-30 s.
+  // Settings from Ansible (roles/dino/templates/config.json.j2); defaults are harder than stock Chrome.
+  let pollMs = 5000;
   Runner.config.ACCELERATION = 0.0025;
   Runner.config.MAX_SPEED = 20;
+  fetch('/config.json').then(r => r.json()).then(c => {
+    if (c.acceleration) Runner.config.ACCELERATION = +c.acceleration;
+    if (c.max_speed) Runner.config.MAX_SPEED = +c.max_speed;
+    if (c.poll_interval_ms) pollMs = +c.poll_interval_ms;
+    if (c.title) { document.title = c.title; document.querySelectorAll('h1, h2').forEach(h => h.textContent = c.title); }
+  }).catch(() => {});
 
   const $ = id => document.getElementById(id);
   const game = $('game'), hint = $('hint'), statusEl = $('status'), board = $('board'), who = $('who');
@@ -158,7 +165,7 @@
       board.innerHTML = j.scores.map((s, i) => `<tr${s.name === playerName && s.score === lastScore ? ' class="you"' : ''}><td>${i + 1}</td><td>${esc(s.name)}</td><td>${s.score}</td></tr>`).join('');
     } catch (err) { setStatus('Server not responding', false); }
   }
-  loadBoard(); setInterval(loadBoard, 5000);
+  loadBoard(); (function tick() { setTimeout(() => { loadBoard(); tick(); }, pollMs); })();
 })();
 </script>
 </body>

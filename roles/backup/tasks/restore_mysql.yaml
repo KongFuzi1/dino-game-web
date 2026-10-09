@@ -1,0 +1,17 @@
+- name: Make sure the database exists
+  community.mysql.mysql_db:
+    name: "{{ db_name }}"
+    state: present
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+
+- name: Import the dump
+  community.mysql.mysql_db:
+    name: "{{ db_name }}"
+    state: import
+    target: "{{ dump_file }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+
+- name: Count restored scores
+  ansible.builtin.command: mysql -N -e "SELECT COUNT(*) FROM scores" {{ db_name }}
+  register: restored_count
+  changed_when: false

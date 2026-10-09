@@ -23,7 +23,7 @@
 <div class="sub" id="sub">&nbsp;</div>
 <div class="status" id="status"></div>
 <table><tbody id="board"></tbody></table>
-<a href="/">play: dino.129-151-208-139.nip.io:8080</a>
+<a href="/" id="playlink"></a>
 <script>
   const board = document.getElementById('board'), statusEl = document.getElementById('status'), sub = document.getElementById('sub');
   const esc = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -37,6 +37,8 @@
       board.innerHTML = j.scores.map((s, i) => `<tr><td>${i + 1}.</td><td>${esc(s.name)}</td><td>${s.played_at}</td><td>${s.score}</td></tr>`).join('');
     } catch (e) { statusEl.textContent = 'Server not responding'; statusEl.className = 'status bad'; wasBad = true; }
   }
+  document.getElementById('playlink').textContent = 'play: ' + location.host;
+  fetch('/config.json').then(r => r.json()).then(c => { if (c.title) { document.title = c.title; document.querySelector('h1').textContent = c.title; } }).catch(() => {});
   load(); setInterval(load, 3000);
 </script>
 </body>
