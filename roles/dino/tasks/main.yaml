@@ -22,17 +22,13 @@
 
 - name: App code
   ansible.builtin.copy:
-    src: app.py
-    dest: /opt/dino/app.py
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
     mode: "0644"
+  loop:
+    - { src: app.py, dest: /opt/dino/app.py }
+    - { src: index.html, dest: /opt/dino/static/index.html }
   notify: restart dino
-
-- name: Static game files
-  ansible.builtin.copy:
-    src: static/
-    dest: /opt/dino/static/
-    mode: "0644"
-    directory_mode: "0755"
 
 - name: Environment file with DB credentials
   ansible.builtin.template:

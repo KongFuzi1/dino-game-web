@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="et">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Dino</title>
+<style>
+  :root { --bg:#f7f7f7; --fg:#222; --muted:#777; --accent:#1c6; --bad:#d33; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#1b1b1b; --fg:#eee; --muted:#999; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family: system-ui, sans-serif; display:flex; flex-direction:column; align-items:center; padding:12px 16px; gap:12px; touch-action: manipulation; }
+  h1 { font-size:1.2rem; margin:0; letter-spacing:.1em; }
+  canvas { width:100%; max-width:640px; background:var(--bg); border-bottom:2px solid var(--fg); image-rendering: pixelated; }
+  .hud { width:100%; max-width:640px; display:flex; justify-content:space-between; font-variant-numeric: tabular-nums; }
+  .hint { color:var(--muted); font-size:.9rem; text-align:center; }
+  form { display:none; gap:8px; width:100%; max-width:640px; }
+  form.show { display:flex; }
+  input { flex:1; font-size:1.1rem; padding:10px; border:1px solid var(--muted); border-radius:6px; background:var(--bg); color:var(--fg); }
+  button { font-size:1.1rem; padding:10px 16px; border:0; border-radius:6px; background:var(--accent); color:#fff; }
+  table { width:100%; max-width:640px; border-collapse:collapse; font-variant-numeric: tabular-nums; }
+  td, th { padding:6px 8px; text-align:left; border-bottom:1px solid #8884; }
+  td:last-child, th:last-child { text-align:right; }
+  .status { width:100%; max-width:640px; padding:8px 12px; border-radius:6px; font-weight:600; }
+  .status.ok { background:#1c62; color:var(--accent); }
+  .status.bad { background:#d332; color:var(--bad); }
+</style>
+</head>
+<body>
+<h1>DINO</h1>
+<div class="hud"><span id="score">0</span><span id="hi">HI 0</span></div>
+<canvas id="c" width="640" height="160"></canvas>
+<div class="hint" id="hint">Puuduta / vajuta tühikut, et hüpata</div>
+<form id="f">
+  <input id="name" maxlength="16" placeholder="Sinu nimi" autocomplete="off" required>
+  <button type="submit">Salvesta skoor</button>
+</form>
+<div class="status" id="status"></div>
+<table><thead><tr><th>#</th><th>Nimi</th><th>Kell</th><th>Skoor</th></tr></thead><tbody id="board"></tbody></table>
+
+<script>
+(() => {
+  const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height, GROUND = H - 20;
+  const scoreEl = document.getElementById('score'), hiEl = document.getElementById('hi');
+  const hint = document.getElementById('hint'), form = document.getElementById('f');
+  const statusEl = document.getElementById('status'), board = document.getElementById('board');
+  let hi = 0;
+  try { hi = +localStorage.getItem('dino_hi') || 0; } catch (e) {}
+  hiEl.textContent = 'HI ' + hi;
+
+  const fg = () => getComputedStyle(document.body).color;
+  let state = 'idle', t = 0, score = 0, speed, dino, obstacles, nextGap, lastTs;
+
+  function reset() {
+    speed = 6; score = 0; obstacles = []; nextGap = 60;
+    dino = { x: 40, y: GROUND, vy: 0, w: 22, h: 36, duck: false };
+  }
+  reset();
+
+  function jump() {
+    if (state === 'idle') { state = 'run'; hint.textContent = ''; form.classList.remove('show'); lastTs = undefined; requestAnimationFrame(loop); }
+    else if (state === 'dead') { reset(); state = 'run'; form.classList.remove('show'); lastTs = undefined; requestAnimationFrame(loop); }
+    else if (dino.y >= GROUND) dino.vy = -13;
+  }
+  addEventListener('keydown', e => { if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); if (document.activeElement.tagName !== 'INPUT') jump(); } });
+  cv.addEventListener('pointerdown', e => { e.preventDefault(); jump(); });
+
+  function spawn() {
+    const tall = Math.random() < 0.3, wide = Math.random() < 0.3;
+    const h = tall ? 44 : 30, w = wide ? 34 : 16;
+    obstacles.push({ x: W + 10, y: GROUND, w, h });
+    nextGap = 40 + Math.random() * 60 - Math.min(speed * 2, 30);
+  }
+
+  function loop(ts) {
+    if (state !== 'run') return;
+    const dt = Math.min(((ts - (lastTs ?? ts)) / 16.67) || 1, 2); lastTs = ts;
+    t += dt;
+    speed += 0.0022 * dt;                     // ramps hard: ~20 s games
+    score += speed * 0.1 * dt;
+    dino.vy += 0.75 * dt; dino.y = Math.min(dino.y + dino.vy * dt, GROUND); if (dino.y === GROUND) dino.vy = 0;
+    nextGap -= dt; if (nextGap <= 0) spawn();
+    for (const o of obstacles) o.x -= speed * dt;
+    obstacles = obstacles.filter(o => o.x + o.w > 0);
+    for (const o of obstacles)
+      if (dino.x + 4 < o.x + o.w && dino.x + dino.w - 4 > o.x && dino.y > o.y - o.h + 2) return die();
+    draw();
+    scoreEl.textContent = Math.floor(score);
+    requestAnimationFrame(loop);
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H); ctx.fillStyle = fg();
+    ctx.fillRect(0, GROUND, W, 2);
+    for (let i = 0; i < 20; i++) ctx.fillRect(((i * 50 - t * speed * 0.5) % (W + 50) + W + 50) % (W + 50) - 50, GROUND + 8, 10, 2);
+    // dino: body, head, eye, legs
+    const d = dino, legT = Math.floor(t / 4) % 2;
+    ctx.fillRect(d.x, d.y - d.h, d.w, d.h - 10);
+    ctx.fillRect(d.x + 10, d.y - d.h - 10, 18, 14);
+    ctx.fillRect(d.x + 2, d.y - 10, 6, legT ? 10 : 7);
+    ctx.fillRect(d.x + 14, d.y - 10, 6, legT ? 7 : 10);
+    ctx.clearRect(d.x + 22, d.y - d.h - 6, 3, 3);
+    for (const o of obstacles) { ctx.fillRect(o.x, o.y - o.h, o.w, o.h); if (o.w > 20) ctx.fillRect(o.x + o.w / 2 - 2, o.y - o.h - 8, 4, 8); }
+  }
+
+  function die() {
+    state = 'dead'; draw();
+    ctx.font = 'bold 20px system-ui'; ctx.textAlign = 'center'; ctx.fillText('GAME OVER', W / 2, 60);
+    const s = Math.floor(score); scoreEl.textContent = s;
+    if (s > hi) { hi = s; hiEl.textContent = 'HI ' + hi; try { localStorage.setItem('dino_hi', hi); } catch (e) {} }
+    hint.textContent = 'Puuduta, et uuesti mängida';
+    form.classList.add('show'); form.dataset.score = s;
+    try { document.getElementById('name').value = localStorage.getItem('dino_name') || ''; } catch (e) {}
+  }
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const name = document.getElementById('name').value.trim(), score = +form.dataset.score;
+    try { localStorage.setItem('dino_name', name); } catch (e) {}
+    form.classList.remove('show');
+    try {
+      const r = await fetch('/api/scores', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, score }) });
+      const j = await r.json();
+      setStatus(j.ok ? `Salvestatud! Koht #${j.rank}` : 'Andmebaas ei vasta: ' + j.error, j.ok);
+    } catch (err) { setStatus('Server ei vasta', false); }
+    loadBoard();
+  });
+
+  function setStatus(msg, ok) { statusEl.textContent = msg; statusEl.className = 'status ' + (ok ? 'ok' : 'bad'); }
+
+  async function loadBoard() {
+    try {
+      const r = await fetch('/api/scores'), j = await r.json();
+      if (!j.ok) { setStatus('Andmebaas ei vasta: ' + j.error, false); board.innerHTML = ''; return; }
+      if (statusEl.className.includes('bad')) setStatus(`Andmebaas on tagasi. ${j.total} skoori.`, true);
+      board.innerHTML = j.scores.map((s, i) => `<tr><td>${i + 1}</td><td>${esc(s.name)}</td><td>${s.played_at}</td><td>${s.score}</td></tr>`).join('');
+    } catch (err) { setStatus('Server ei vasta', false); }
+  }
+  const esc = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  draw(); loadBoard(); setInterval(loadBoard, 5000);
+})();
+</script>
+</body>
+</html>
