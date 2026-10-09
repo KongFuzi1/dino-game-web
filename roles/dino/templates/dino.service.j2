@@ -8,7 +8,7 @@ User=dino
 Group=dino
 EnvironmentFile=/etc/default/dino
 WorkingDirectory=/opt/dino
-ExecStart=/usr/bin/gunicorn --bind 127.0.0.1:5000 --workers 1 --access-logfile - app:app
+ExecStart=/usr/bin/gunicorn --bind 127.0.0.1:5000 --worker-class gthread --workers 2 --threads 8 --access-logfile /dev/null app:app
 Restart=always
 RestartSec=2
 

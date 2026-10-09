@@ -7,12 +7,15 @@ database is restored it recovers without a restart.
 import glob
 import os
 import re
+import threading
+import time
 
 import pymysql
 from flask import Flask, jsonify, request, send_from_directory
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, generate_latest
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 120  # lets HAProxy cache the game files
 
 DB = dict(
     host="127.0.0.1",
@@ -39,11 +42,24 @@ SCHEMA = """CREATE TABLE IF NOT EXISTS scores (
 
 
 def db():
-    conn = pymysql.connect(**DB)
-    with conn.cursor() as c:
-        c.execute(SCHEMA)
-    conn.commit()
-    return conn
+    return pymysql.connect(**DB)
+
+
+def ensure_schema():
+    try:
+        with pymysql.connect(**DB) as conn, conn.cursor() as c:
+            c.execute(SCHEMA)
+            conn.commit()
+    except pymysql.MySQLError:
+        pass  # database may be gone (that's the demo); the insert path retries the schema
+
+
+ensure_schema()
+
+# 300 phones poll the leaderboard every 5 s: serve one DB read per second, not sixty.
+_cache = {"t": 0.0, "body": None, "status": 200}
+_cache_lock = threading.Lock()
+CACHE_TTL = 1.0
 
 
 @app.get("/")
@@ -61,8 +77,7 @@ def healthz():
     return "ok"
 
 
-@app.get("/api/scores")
-def scores():
+def read_scores():
     try:
         with db() as conn, conn.cursor() as c:
             c.execute("SELECT name, score, played_at FROM scores ORDER BY score DESC, id ASC LIMIT 10")
@@ -71,9 +86,23 @@ def scores():
             total = c.fetchone()["n"]
         for r in rows:
             r["played_at"] = r["played_at"].strftime("%H:%M:%S")
-        return jsonify(ok=True, total=total, scores=rows)
+        return {"ok": True, "total": total, "scores": rows}, 200
     except pymysql.MySQLError as e:
-        return jsonify(ok=False, error=str(e.args[1] if len(e.args) > 1 else e)), 503
+        return {"ok": False, "error": str(e.args[1] if len(e.args) > 1 else e)}, 503
+
+
+@app.get("/api/scores")
+def scores():
+    now = time.monotonic()
+    with _cache_lock:
+        if _cache["body"] is None or now - _cache["t"] > CACHE_TTL:
+            _cache["body"], _cache["status"] = read_scores()
+            _cache["t"] = now
+        body, status = _cache["body"], _cache["status"]
+    resp = jsonify(body)
+    resp.status_code = status
+    resp.headers["Cache-Control"] = "public, max-age=1"  # HAProxy serves the polls; Python sees ~1 req/s
+    return resp
 
 
 @app.post("/api/scores")
@@ -87,10 +116,16 @@ def submit():
     SUBMISSIONS.inc()
     try:
         with db() as conn, conn.cursor() as c:
-            c.execute("INSERT INTO scores (name, score) VALUES (%s, %s)", (name, score))
+            try:
+                c.execute("INSERT INTO scores (name, score) VALUES (%s, %s)", (name, score))
+            except pymysql.err.ProgrammingError:  # table missing (fresh DB after a drop): create it once
+                c.execute(SCHEMA)
+                c.execute("INSERT INTO scores (name, score) VALUES (%s, %s)", (name, score))
             conn.commit()
             c.execute("SELECT COUNT(*) + 1 AS pos FROM scores WHERE score > %s", (score,))
             rank = c.fetchone()["pos"]
+        with _cache_lock:
+            _cache["t"] = 0.0  # next read sees the new score
         return jsonify(ok=True, rank=rank)
     except pymysql.MySQLError as e:
         return jsonify(ok=False, error=str(e.args[1] if len(e.args) > 1 else e)), 503

@@ -53,6 +53,13 @@
     group: grafana
     mode: "0644"
 
+- name: Cap Grafana's Go heap on small boxes
+  ansible.builtin.lineinfile:
+    path: /etc/default/grafana-server
+    regexp: "^GOMEMLIMIT="
+    line: "GOMEMLIMIT=160MiB"
+  notify: restart grafana
+
 - name: Start Grafana
   ansible.builtin.service:
     name: grafana-server

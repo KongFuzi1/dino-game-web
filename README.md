@@ -40,3 +40,11 @@ ansible-playbook restore.yaml -e dump=/var/backups/dino/dino-20261209T140000.sql
 `demo1` is an OCI free-tier VM that also runs an unrelated nginx site on 80/443, so HAProxy
 listens on 8080 there (`host_vars/demo1.yaml`). Hostnames use nip.io, so no DNS setup:
 `dino.129-151-208-139.nip.io:8080` etc. Set `demo_domain` in `group_vars/all.yaml` for a real domain.
+
+## Load
+
+`tests/load.py` simulates phones (keep-alive, leaderboard poll every 5 s, a score every ~20 s, page
+loads spread over a QR-scan window). On the free-tier micro (1/8 OCPU, 1 GB) with 300 phones:
+all 200s, leaderboard p95 94 ms, score post p95 402 ms. What made it work: HAProxy caches the
+static files and the leaderboard JSON (1 s), gunicorn runs threaded, Grafana's heap is capped.
+A same-second burst of 300 page loads without keep-alive still overloads the micro; real phones don't do that.
