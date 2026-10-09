@@ -1,4 +1,4 @@
-# ansible-web-dino
+# dino-game-web
 
 The Chrome dinosaur game with a shared leaderboard, deployed by Ansible, built to be
 **broken on stage and brought back with one command**.
@@ -27,7 +27,7 @@ Pages: `/` the game (asks for a name, auto-starts, touch buttons for jump and du
 ## Quick start
 
 ```bash
-git clone https://github.com/KongFuzi1/ansible-web-dino && cd ansible-web-dino
+git clone https://github.com/KongFuzi1/dino-game-web && cd dino-game-web
 ansible-galaxy collection install community.mysql community.postgresql
 cp hosts.example hosts            # put your Ubuntu 22.04/24.04 box in it
 vim group_vars/all.yaml           # demo_domain, db_engine, password, game settings
