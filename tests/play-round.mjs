@@ -20,8 +20,10 @@ await sleep(300);
 console.log('dialog hidden:', !(await ev(`document.getElementById('nameov').classList.contains('show')`)));
 console.log('runner ready:', await ev(`!!(Runner.instance_ && Runner.instance_.tRex)`));
 const tap = () => ev(`(()=>{const g=document.getElementById('game'); g.dispatchEvent(new MouseEvent('mousedown',{bubbles:true})); setTimeout(()=>g.dispatchEvent(new MouseEvent('mouseup',{bubbles:true})),80); return 1})()`);
-await tap(); await sleep(1500);
-console.log('playing after tap:', await ev(`Runner.instance_.playing`), 'distance:', await ev(`Math.round(Runner.instance_.distanceRan)`));
+await sleep(1500);
+const shot = await send('Page.captureScreenshot', { format: 'png' });
+(await import('node:fs')).writeFileSync(process.env.SHOT || '/tmp/dino-midgame.png', Buffer.from(shot.result.data, 'base64'));
+console.log('playing after name submit (auto-start):', await ev(`Runner.instance_.playing`), 'distance:', await ev(`Math.round(Runner.instance_.distanceRan)`));
 await tap(); await sleep(400);
 console.log('jumping after 2nd tap:', await ev(`Runner.instance_.tRex.jumping`));
 // run until it crashes (no more taps), max 25 s

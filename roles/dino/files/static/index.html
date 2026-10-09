@@ -38,7 +38,7 @@
     <div id="main-content"><div class="icon icon-offline"></div></div>
   </div>
 </div>
-<div class="hint" id="hint">Puuduta mängu või vajuta tühikut = hüppa. Alla-nool = kükita.</div>
+<div class="hint" id="hint">Puuduta mängu või vajuta tühikut = hüppa.</div>
 <div class="status" id="status"></div>
 <table><thead><tr><th>#</th><th>Nimi</th><th>Skoor</th></tr></thead><tbody id="board"></tbody></table>
 <footer>T-Rex runner: © The Chromium Authors, BSD license</footer>
@@ -83,12 +83,16 @@
     playerName = nameEl.value.trim(); if (!playerName) return;
     try { localStorage.setItem('dino_name', playerName); } catch (e) {}
     who.textContent = playerName; nameov.classList.remove('show'); nameEl.blur();
+    setTimeout(() => press({ preventDefault() {} }), 150);   // start right away
   });
   who.addEventListener('click', () => { nameov.classList.add('show'); nameEl.focus(); });
 
   // ---- input: the stock runner only listens to the keyboard (desktop) or a page-sized touch
   // overlay (mobile). Replace both with one handler on the game area. ----
   Runner.prototype.createTouchController = function () {};
+  // Chromium's "arcade mode" rescales and repositions the canvas for a full-page layout; not here.
+  Runner.prototype.setArcadeMode = function () {};
+  Runner.prototype.setArcadeModeContainerScale = function () {};
   Runner.prototype.startListening = function () { document.addEventListener('keydown', this); document.addEventListener('keyup', this); };
   Runner.prototype.stopListening = function () { document.removeEventListener('keydown', this); document.removeEventListener('keyup', this); };
   const fake = type => ({ type, keyCode: 0, target: game, currentTarget: game, preventDefault() {} });
