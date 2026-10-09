@@ -7,10 +7,10 @@ prometheus_host: "prometheus.{{ demo_domain }}"
 haproxy_port: 80            # the port the audience connects to
 
 # ---- Game source ------------------------------------------------------------------------
-dino_source: local          # local  = copy ./app from this checkout
-                            # github = fetch app/ from the repo below at dino_version (tag, branch or commit)
+dino_source: github         # github = fetch app/ from dino_repo at dino_version (tag, branch or commit)
+                            # local  = copy ./app from this checkout
 dino_repo: KongFuzi1/dino-game-web
-dino_version: main
+dino_version: v1.0.0
 
 # ---- Game settings (served to the page as /config.json) ---------------------------------
 game_title: DINO

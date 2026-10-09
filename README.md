@@ -60,7 +60,7 @@ A dump taken while the database was gone is empty; the restore skips those autom
 | Variable                                 | Default           | Notes                                                 |
 |------------------------------------------|-------------------|-------------------------------------------------------|
 | `demo_domain`, `haproxy_port`            | nip.io, 80        | hostnames are `dino.`, `grafana.`, `prometheus.` + domain |
-| `dino_source`, `dino_repo`, `dino_version` | local, this repo, main | `github` fetches `app/` from a tag/branch/commit of the repo |
+| `dino_source`, `dino_repo`, `dino_version` | github, this repo, v1.0.0 | `github` fetches `app/` from a tag/branch/commit of the repo |
 | `game_title`, `game_acceleration`, `game_max_speed` | DINO, 0.0025, 20 | Chrome's own values are 0.001 and 13, much longer games |
 | `leaderboard_size`, `poll_interval_ms`, `cache_ttl` | 10, 5000, 1 | the leaderboard JSON is cached in the app and in HAProxy |
 | `db_engine`, `db_name`, `db_user`, `db_password` | mysql, dino, dino, env `DINO_DB_PASSWORD` or a placeholder | **change the password** |
